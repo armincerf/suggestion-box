@@ -1,0 +1,35 @@
+{
+  "name": "suggestion-box",
+  "version": "1.0.0",
+  "description": "A simple anonymous feedback collector webapp",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build && bunx zero-deploy-permissions -p src/schema.ts --output-format=sql --output-file=.permissions.sql",
+    "dev:clean": "source .env && docker volume rm -f docker_zstart_solid_pgdata && rm -rf \"${ZERO_REPLICA_FILE}\"*",
+    "dev:db-down": "docker compose --env-file .env -f ./docker/docker-compose.yml down",
+    "dev:db-up": "docker compose --env-file .env -f ./docker/docker-compose.yml up",
+    "dev:ui": "VITE_PUBLIC_SERVER='http://localhost:4848' vite",
+    "dev:zero-cache": "zero-cache-dev -p src/schema.ts"
+  },
+  "keywords": [
+    "feedback",
+    "anonymous",
+    "suggestion"
+  ],
+  "author": "Alex Davis",
+  "license": "MIT",
+  "dependencies": {
+    "@rocicorp/zero": "0.17.2025031300",
+    "solid-js": "^1.9.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1",
+    "vite-plugin-solid": "^2.11.6"
+  },
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "@rocicorp/zero-sqlite3"
+  ]
+}

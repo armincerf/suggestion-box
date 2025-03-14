@@ -1,0 +1,399 @@
+:root {
+  --primary-color: #4a6fa5;
+  --secondary-color: #166088;
+  --accent-color: #47b8e0;
+  --light-bg: #f5f7fa;
+  --dark-text: #333;
+  --light-text: #666;
+  --lighter-text: #999;
+  --border-color: #e1e5eb;
+  --success-color: #4caf50;
+  --danger-color: #f44336;
+  --warning-color: #ff9800;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  color: var(--dark-text);
+  background-color: var(--light-bg);
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+textarea:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(71, 184, 224, 0.2);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* App structure */
+.app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Home page */
+.home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.home-page h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.description {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  color: var(--light-text);
+}
+
+/* Suggestion form */
+.suggestion-form {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.suggestion-form button[type="submit"] {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+}
+
+.suggestion-form button[type="submit"]:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+}
+
+.view-feedback-container {
+  margin-top: 1rem;
+}
+
+.view-feedback-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.view-feedback-btn:hover {
+  background-color: var(--secondary-color);
+  text-decoration: none;
+}
+
+/* Feedback page */
+.feedback-page h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: var(--light-text);
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+/* Suggestion item */
+.suggestion-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.suggestion-body {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.suggestion-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.suggestion-date {
+  color: var(--lighter-text);
+  font-size: 0.9rem;
+}
+
+.suggestion-reactions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Reaction buttons */
+.reaction-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background-color: var(--light-bg);
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.reaction-button.reacted {
+  background-color: rgba(71, 184, 224, 0.2);
+  border: 1px solid var(--accent-color);
+}
+
+.reaction-button:hover {
+  background-color: #e5e9f0;
+}
+
+/* Comment section */
+.comments-section {
+  margin-top: 1rem;
+}
+
+.comments-section h4 {
+  margin-bottom: 1rem;
+  color: var(--light-text);
+}
+
+.comment-form-container {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+}
+
+.selected-text {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(71, 184, 224, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-color);
+  font-size: 0.9rem;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment-form button {
+  align-self: flex-end;
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.comment-form button:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+}
+
+/* Comment */
+.comment {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+}
+
+.comment-body {
+  margin-bottom: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.comment-date {
+  color: var(--lighter-text);
+}
+
+.comment-reactions {
+  display: flex;
+  gap: 4px;
+}
+
+.reply-form {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Replies */
+.replies {
+  margin-top: 1rem;
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border-color);
+}
+
+/* Load more */
+.load-more-btn {
+  display: block;
+  margin: 2rem auto;
+  padding: 10px 20px;
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+  border: 1px solid var(--border-color);
+}
+
+.load-more-btn:hover {
+  background-color: #e5e9f0;
+}
+
+.loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--light-text);
+}
+
+/* Not found page */
+.not-found {
+  text-align: center;
+  padding: 3rem;
+}
+
+.not-found h1 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.not-found p {
+  margin-bottom: 2rem;
+  color: var(--light-text);
+}
+
+.not-found a {
+  font-weight: 500;
+}
+
+/* Delete and edit buttons */
+.delete-button {
+  background-color: var(--danger-color);
+  color: white;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.edit-button {
+  background-color: var(--warning-color);
+  color: white;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+}
+
+.edit-button:hover:not(:disabled) {
+  background-color: #e68900;
+}
+
+/* Edit suggestion form */
+.edit-suggestion-form {
+  margin-bottom: 1rem;
+}
+
+.edit-suggestion-form textarea {
+  margin-bottom: 0.5rem;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.edit-buttons button:first-child {
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+  border: 1px solid var(--border-color);
+}
+
+.edit-buttons button:last-child {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.edit-buttons button:last-child:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+} 
