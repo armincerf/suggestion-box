@@ -16,7 +16,17 @@ import {
 	relationships,
 	number,
 	type PermissionsConfig,
+	boolean,
 } from "@rocicorp/zero";
+
+// Category entity
+const category = table("category")
+	.columns({
+		id: string(),
+		name: string(),
+		description: string(),
+	})
+	.primaryKey("id");
 
 // Suggestion entity
 const suggestion = table("suggestion")
@@ -25,10 +35,11 @@ const suggestion = table("suggestion")
 		body: string(),
 		timestamp: number(),
 		userIdentifier: string().from("user_identifier"),
+		displayName: string().from("display_name").optional(),
+		categoryID: string().from("category_id"),
 	})
 	.primaryKey("id");
 
-// Comment entity (can be on a suggestion or a reply to another comment)
 const comment = table("comment")
 	.columns({
 		id: string(),
@@ -36,10 +47,12 @@ const comment = table("comment")
 		timestamp: number(),
 		suggestionID: string().from("suggestion_id"),
 		parentCommentID: string().from("parent_comment_id").optional(),
+		isRootComment: boolean().from("is_root_comment"),
 		// For selection-based comments
 		selectionStart: number().from("selection_start").optional(),
 		selectionEnd: number().from("selection_end").optional(),
 		userIdentifier: string().from("user_identifier"),
+		displayName: string().from("display_name").optional(),
 	})
 	.primaryKey("id");
 
@@ -52,6 +65,24 @@ const reaction = table("reaction")
 		emoji: string(),
 		userIdentifier: string().from("user_identifier"),
 		timestamp: number(),
+	})
+	.primaryKey("id");
+
+// User entity
+const user = table("user")
+	.columns({
+		id: string(),
+		displayName: string().from("display_name"),
+		avatarUrl: string().optional().from("avatar_url"),
+	})
+	.primaryKey("id");
+
+// Session entity
+const session = table("session")
+	.columns({
+		id: string(),
+		startedAt: number().from("started_at"),
+		startedBy: string().from("started_by"),
 	})
 	.primaryKey("id");
 
@@ -87,7 +118,7 @@ const reactionRelationships = relationships(reaction, ({ one }) => ({
 	}),
 }));
 
-const suggestionRelationships = relationships(suggestion, ({ many }) => ({
+const suggestionRelationships = relationships(suggestion, ({ many, one }) => ({
 	comments: many({
 		sourceField: ["id"],
 		destField: ["suggestionID"],
@@ -98,17 +129,62 @@ const suggestionRelationships = relationships(suggestion, ({ many }) => ({
 		destField: ["suggestionID"],
 		destSchema: reaction,
 	}),
+	category: one({
+		sourceField: ["categoryID"],
+		destField: ["id"],
+		destSchema: category,
+	}),
+}));
+
+const categoryRelationships = relationships(category, ({ many }) => ({
+	suggestions: many({
+		sourceField: ["id"],
+		destField: ["categoryID"],
+		destSchema: suggestion,
+	}),
+}));
+
+// Add relationships for user and session
+const userRelationships = relationships(user, ({ many }) => ({
+	sessions: many({
+		sourceField: ["id"],
+		destField: ["startedBy"],
+		destSchema: session,
+	}),
+}));
+
+const sessionRelationships = relationships(session, ({ one }) => ({
+	user: one({
+		sourceField: ["startedBy"],
+		destField: ["id"],
+		destSchema: user,
+	}),
 }));
 
 export const schema = createSchema({
-	tables: [suggestion, comment, reaction],
-	relationships: [commentRelationships, reactionRelationships, suggestionRelationships],
+	tables: [suggestion, comment, reaction, category, user, session],
+	relationships: [
+		commentRelationships,
+		reactionRelationships,
+		suggestionRelationships,
+		categoryRelationships,
+		userRelationships,
+		sessionRelationships,
+	],
 });
 
 export type Schema = typeof schema;
-export type Suggestion = Row<typeof schema.tables.suggestion>;
-export type Comment = Row<typeof schema.tables.comment>;
+export type Suggestion = Row<typeof schema.tables.suggestion> & {
+	comments: Readonly<Row<typeof schema.tables.comment>[]>;
+	reactions: Readonly<Row<typeof schema.tables.reaction>[]>;
+};
+export type Comment = Row<typeof schema.tables.comment> & {
+	reactions?: Readonly<Row<typeof schema.tables.reaction>[]>;
+};
 export type Reaction = Row<typeof schema.tables.reaction>;
+export type Category = Row<typeof schema.tables.category>;
+export type User = Row<typeof schema.tables.user>;
+export type Session = Row<typeof schema.tables.session>;
 
 // The contents of your decoded JWT.
 type AuthData = {
@@ -141,6 +217,14 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		return cmp("userIdentifier", authData.sub ?? "");
 	};
 
+	// Allow users to only update their own user name
+	const allowIfUserCreator = (
+		authData: AuthData,
+		{ cmp }: ExpressionBuilder<Schema, "user">,
+	) => {
+		return cmp("id", authData.sub ?? "");
+	};
+
 	return {
 		suggestion: {
 			row: {
@@ -165,6 +249,30 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
 				delete: [allowIfReactionCreator], // Only allow deleting own reactions
+			},
+		},
+		category: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+				// No update or delete permissions for categories
+			},
+		},
+		user: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+				update: {
+					preMutation: [allowIfUserCreator],
+					postMutation: [allowIfUserCreator],
+				},
+			},
+		},
+		session: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+				// No update or delete permissions for sessions
 			},
 		},
 	} satisfies PermissionsConfig<AuthData, Schema>;
