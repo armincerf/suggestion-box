@@ -30,7 +30,7 @@ export function PaginatedList<T>(props: PaginatedListProps<T>) {
       <Show when={hasMore()}>
         <button 
           type="button" 
-          class="view-more-btn"
+          class="mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
           onClick={loadMore}
         >
           {props.loadMoreText || `Load more (${props.items.length - limit()} remaining)`}

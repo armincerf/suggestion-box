@@ -1,5 +1,3 @@
-import { twMerge } from "tailwind-merge";
-
 type ClassDictionary = Record<string, unknown>;
 type ClassArray = ClassValue[];
 type ClassValue =
@@ -25,10 +23,9 @@ export function clsx(args: ClassValue[]) {
 			}
 		}
 	}
-	console.log(args, str);
 	return str;
 }
 
 export type Cn = (...args: ClassValue[]) => string;
 
-export const cn: Cn = (...args: ClassValue[]) => twMerge(clsx(args));
+export const cn: Cn = (...args: ClassValue[]) => clsx(args);

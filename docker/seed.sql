@@ -1,7 +1,8 @@
 CREATE TABLE category (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    background_color TEXT NOT NULL
 );
 
 -- Insert default categories

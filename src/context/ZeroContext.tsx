@@ -18,13 +18,6 @@ export function useZero<
 	return zero as Zero<S, MD>;
 }
 
-export function createUseZero<
-	S extends Schema,
-	MD extends CustomMutatorDefs<S> | undefined = undefined,
->() {
-	return () => useZero<S, MD>();
-}
-
 export function ZeroProvider<
 	S extends Schema,
 	MD extends CustomMutatorDefs<S> | undefined = undefined,

@@ -25,6 +25,7 @@ const category = table("category")
 		id: string(),
 		name: string(),
 		description: string(),
+		backgroundColor: string().from("background_color"),
 	})
 	.primaryKey("id");
 
@@ -277,8 +278,3 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		},
 	} satisfies PermissionsConfig<AuthData, Schema>;
 });
-
-export default {
-	schema,
-	permissions,
-};

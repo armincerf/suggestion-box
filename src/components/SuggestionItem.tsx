@@ -2,7 +2,7 @@ import { createSignal, Show, createMemo, Suspense } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import type { Suggestion } from "../schema";
 import { getNameFromUserId } from "../nameGenerator";
-import { CommentForm } from "./CommentForm";
+import CommentForm from "./CommentForm";
 import { NestedComment } from "./NestedComment";
 import { ErrorFallback } from "./ErrorFallback";
 import { MAX_COMMENTS_SHOWN } from "../utils/constants";
@@ -12,6 +12,8 @@ import { PaginatedList } from "./PaginatedList";
 import { formatDistanceToNow } from "date-fns";
 import { useZero } from "../context/ZeroContext";
 import { ReactionButtons } from "./ReactionButtons";
+import { UserAvatar } from "./UserAvatar";
+
 interface SuggestionItemProps {
 	suggestion: Suggestion;
 	userIdentifier: string;
@@ -161,8 +163,14 @@ export function SuggestionItem(props: SuggestionItemProps) {
 				<div class="card-body">
 					{/* Top meta (author & date) */}
 					<div class="flex items-center justify-between suggestion-meta mb-2">
-						<div class="suggestion-author font-semibold text-md">
-							{suggestionAuthor()}
+						<div class="flex items-center gap-2">
+							<UserAvatar
+								userIdentifier={suggestion().userIdentifier}
+								displayName={suggestionAuthor()}
+							/>
+							<div class="suggestion-author font-semibold text-md truncate max-w-[200px]">
+								{suggestionAuthor()}
+							</div>
 						</div>
 						<span class="suggestion-date text-sm opacity-70">
 							{relativeDate()}
@@ -290,10 +298,11 @@ export function SuggestionItem(props: SuggestionItemProps) {
 									onSubmit={handleAddComment}
 									placeholder={
 										selectedText()
-											? "Comment on selected text..."
-											: "Add a comment..."
+											? `Comment on "${selectedText()}"`
+											: "Write a comment..."
 									}
-									id={`comment-form-input-${suggestion().id}`}
+									id={`comment-form-${suggestion().id}`}
+									displayName={displayName()}
 								/>
 								<Show when={selectedText()}>
 									<div class="selected-text mt-2 text-sm" aria-live="polite">
@@ -336,7 +345,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 										commentsExpanded() ? "Hide comments" : "Show comments"
 									}
 								>
-									{/* Let’s show arrow + the count */}
+									{/* Let's show arrow + the count */}
 									<span class="flex items-center gap-1">
 										<span
 											class={`transition-transform ${

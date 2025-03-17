@@ -17,12 +17,18 @@ function ReactionButton(props: {
 	return (
 		<button
 			type="button"
-			class={`reaction-button ${props.isReacted ? "reacted" : ""}`}
+			class={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+				props.isReacted
+					? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100"
+					: "bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+			}`}
 			onClick={handleClick}
 			aria-label={`${props.emoji} reaction (${props.count})`}
 			aria-pressed={props.isReacted}
 		>
-			<span aria-hidden="true">{props.emoji}</span>
+			<span aria-hidden="true" class="mr-1">
+				{props.emoji}
+			</span>
 			<span>{props.count}</span>
 		</button>
 	);
@@ -43,9 +49,9 @@ export function ReactionButtons(props: {
 				await z.mutate.reaction.delete({ id: existingReactionId });
 			} else {
 				// Type guard to check if entity is a Comment
-				const isComment = (obj: Suggestion | Comment): obj is Comment => 
-					'suggestionID' in obj;
-				
+				const isComment = (obj: Suggestion | Comment): obj is Comment =>
+					"suggestionID" in obj;
+
 				if (isComment(entity())) {
 					// It's a comment
 					await z.mutate.reaction.insert({
@@ -83,7 +89,12 @@ export function ReactionButtons(props: {
 			)}
 		>
 			<Suspense
-				fallback={<div class="reaction-loading-placeholder" aria-busy="true" />}
+				fallback={
+					<div class="flex gap-2 animate-pulse" aria-busy="true">
+						<div class="h-6 w-10 bg-gray-200 rounded-full" />
+						<div class="h-6 w-10 bg-gray-200 rounded-full" />
+					</div>
+				}
 			>
 				<div class="flex flex-wrap gap-2">
 					<Index each={COMMON_EMOJIS}>
@@ -96,9 +107,7 @@ export function ReactionButtons(props: {
 								}
 								isReacted={
 									entity().reactions?.find(
-										(r) =>
-											r.emoji === emoji() &&
-											r.userIdentifier === z.userID,
+										(r) => r.emoji === emoji() && r.userIdentifier === z.userID,
 									) !== undefined
 								}
 								onToggle={toggleReaction}

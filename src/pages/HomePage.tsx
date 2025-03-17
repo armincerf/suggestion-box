@@ -86,7 +86,7 @@ export function HomePage() {
 								<button
 									type="button"
 									onClick={createNewSession}
-									disabled={isCreatingSession()}
+									disabled={true}
 									class={cn(
 										"btn btn-primary w-full",
 										isCreatingSession() && "loading",

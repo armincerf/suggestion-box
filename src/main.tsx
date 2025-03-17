@@ -3,17 +3,14 @@ import { render } from "solid-js/web";
 import { createSignal, onMount } from "solid-js";
 import App from "./App";
 import "./index.css";
-import "./components/ErrorFallback.css";
 import { schema } from "./schema";
-import { decodeJwt, SignJWT } from "jose";
 import { createZero } from "@rocicorp/zero/solid";
 import type { Zero } from "@rocicorp/zero";
 import type { Schema as AppSchema } from "./schema";
-import { randID, randomName } from "./rand";
+import { randID } from "./rand";
 import { LoadingSpinner } from "./components/LoadingSpinner";
-import { suggestionQuery } from "./hooks/useSuggestions";
 import { ZeroProvider } from "./context/ZeroContext";
-import { userQuery } from "./hooks/useUser";
+import { getNameFromUserId } from "./nameGenerator";
 
 function must<T>(val: T) {
 	if (!val) {
@@ -22,13 +19,62 @@ function must<T>(val: T) {
 	return val;
 }
 
-// Get the root element
 const root = document.getElementById("root");
 if (!root) {
 	throw new Error("Root element not found");
 }
 
-// Create a component that handles the initialization and displays the app
+// Simple JWT encoding and decoding (HS256 only)
+async function createJWT(
+	payload: object,
+	secret: string,
+	expiresInDays = 30,
+): Promise<string> {
+	const header = { alg: "HS256", typ: "JWT" };
+	const iat = Math.floor(Date.now() / 1000);
+	const exp = iat + expiresInDays * 24 * 60 * 60;
+	const fullPayload = { ...payload, iat, exp };
+
+	function base64UrlEncode(obj: object): string {
+		return btoa(JSON.stringify(obj))
+			.replace(/\+/g, "-")
+			.replace(/\//g, "_")
+			.replace(/=+$/, "");
+	}
+
+	const encHeader = base64UrlEncode(header);
+	const encPayload = base64UrlEncode(fullPayload);
+
+	const unsignedToken = `${encHeader}.${encPayload}`;
+
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(secret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+
+	const signature = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		new TextEncoder().encode(unsignedToken),
+	);
+
+	const encSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_")
+		.replace(/=+$/, "");
+
+	return `${unsignedToken}.${encSignature}`;
+}
+
+function decodeJWT(token: string) {
+	const [, payload] = token.split(".");
+	const decodedPayload = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+	return JSON.parse(decodedPayload);
+}
+
 function AppLoader() {
 	const [isLoading, setIsLoading] = createSignal(true);
 	const [zeroInstance, setZeroInstance] = createSignal<Zero<AppSchema> | null>(
@@ -37,34 +83,24 @@ function AppLoader() {
 
 	onMount(async () => {
 		try {
-			// Check for existing JWT
 			let encodedJWT = localStorage.getItem("jwt");
 			const userExisted = !!encodedJWT;
 
-			// If no JWT exists, create one
 			if (!encodedJWT) {
 				const randomId = randID();
-				encodedJWT = await new SignJWT({
-					sub: randomId,
-					iat: Math.floor(Date.now() / 1000),
-				})
-					.setProtectedHeader({ alg: "HS256" })
-					.setExpirationTime("30days")
-					.sign(
-						new TextEncoder().encode(
-							must(import.meta.env.VITE_ZERO_AUTH_SECRET),
-						),
-					);
+				encodedJWT = await createJWT(
+					{ sub: randomId },
+					must(import.meta.env.VITE_ZERO_AUTH_SECRET),
+					30,
+				);
 
 				localStorage.setItem("jwt", encodedJWT);
 			}
 
-			// Decode the JWT to get user ID
-			const decodedJWT = encodedJWT && decodeJwt(encodedJWT);
-			const userID = decodedJWT?.sub ? (decodedJWT.sub as string) : "anon";
+			const decodedJWT = encodedJWT && decodeJWT(encodedJWT);
+			const userID = decodedJWT?.sub ? decodedJWT.sub : "anon";
 			localStorage.setItem("userIdentifier", userID);
 
-			// Create the Zero instance
 			const z = createZero({
 				userID,
 				auth: () => encodedJWT ?? "anon",
@@ -76,23 +112,11 @@ function AppLoader() {
 			if (!userExisted) {
 				z.mutate.user.insert({
 					id: userID,
-					displayName: randomName(),
+					displayName: getNameFromUserId(userID),
 					avatarUrl: `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`,
 				});
 			}
-			setTimeout(() => {
-				if (z) {
-					// for some reason doing this results in all data being sent to the client
-					// even if its already cached in idb, but it does at least preload the data
-					// and we can put it in a timeout to ensure it's not blocking the main thread.
-					// If this becomes a bottleneck because of the amount of data being sent,
-					// you should just be able to remove this and let zero load the data normally,
-					// though you'll see more spinners when the other pages first load.
-					// TODO: figure out why the unecessary data fetching is happening
-					suggestionQuery(z).preload();
-					userQuery(z).preload();
-				}
-			}, 0);
+
 			setZeroInstance(z);
 		} catch (error) {
 			console.error("Failed to initialize app:", error);
@@ -114,5 +138,4 @@ function AppLoader() {
 	);
 }
 
-// Render the app loader
 render(() => <AppLoader />, root);

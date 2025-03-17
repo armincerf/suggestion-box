@@ -1,6 +1,5 @@
 import { lazy, ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "./components/ErrorFallback";
-import "./components/ErrorFallback.css";
 import { type RouteDefinition, Router } from "@solidjs/router";
 
 function preloadOtherPages() {
