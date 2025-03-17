@@ -15,5 +15,5 @@ export const categoryQuery = (z: Zero<Schema>) =>
 export function useCategories() {
 	const z = useZero();
 
-	return useQuery(() => categoryQuery(z));
+	return useQuery(() => categoryQuery(z), { ttl: "forever" });
 }

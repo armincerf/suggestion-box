@@ -13,5 +13,5 @@ export function useSuggestions() {
 			.orderBy("timestamp", "desc")
 			.related("comments")
 			.related("reactions");
-	});
+	}, { ttl: "forever" });
 }

@@ -16,7 +16,7 @@ export function useCommentReplies(props: {
 			.orderBy("timestamp", "asc");
 
 		return props.limit ? baseQuery.limit(props.limit) : baseQuery;
-	});
+	}, { ttl: "forever" });
 
 	return { replies };
 }

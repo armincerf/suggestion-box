@@ -11,7 +11,7 @@ export const userQuery = (z: Zero<Schema>) =>
 export function useUser() {
 	const z = useZero();
 	const userId = z.userID;
-	const [userData] = useQuery(() => userQuery(z));
+	const [userData] = useQuery(() => userQuery(z), { ttl: "forever" });
 	
 	return {
 		user: userData,

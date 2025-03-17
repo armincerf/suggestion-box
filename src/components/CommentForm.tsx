@@ -19,10 +19,11 @@ interface CommentFormProps {
  */
 export function CommentForm(props: CommentFormProps) {
 	const z = useZero();
-	const [parentComment] = useQuery(() =>
-		z.query.comment.where("id", props.parentCommentId || "").one(),
+	const [parentComment] = useQuery(
+		() => z.query.comment.where("id", props.parentCommentId || "").one(),
+		{ ttl: "forever" },
 	);
-	
+
 	// Get the reply name, ensuring it's a string or undefined
 	const getReplyName = () => {
 		const name = props.inReplyTo || parentComment()?.displayName;
@@ -44,7 +45,7 @@ export function CommentForm(props: CommentFormProps) {
 			)}
 		>
 			<BaseForm
-				userIdentifier={z?.userID || ''}
+				userIdentifier={z?.userID || ""}
 				displayName={props.displayName}
 				placeholder={props.placeholder || "Add your comment..."}
 				onSubmit={props.onSubmit}

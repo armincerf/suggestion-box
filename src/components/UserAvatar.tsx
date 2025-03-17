@@ -72,8 +72,9 @@ export function UserAvatar(props: UserAvatarProps) {
 	const isCurrentUser = () => props.userIdentifier === z.userID;
 	const editable = () => props.editable !== false && isCurrentUser();
 
-	const [user] = useQuery(() =>
-		z.query.user.where("id", props.userIdentifier).one(),
+	const [user] = useQuery(
+		() => z.query.user.where("id", props.userIdentifier).one(),
+		{ ttl: "forever" },
 	);
 
 	const avatarUrl = () => {
