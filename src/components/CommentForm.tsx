@@ -3,6 +3,7 @@ import { ErrorFallback } from "./ErrorFallback";
 import { useQuery } from "@rocicorp/zero/solid";
 import { useZero } from "../context/ZeroContext";
 import { BaseForm } from "./BaseForm";
+import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
 
 interface CommentFormProps {
 	onSubmit: (text: string) => Promise<void>;
@@ -28,6 +29,10 @@ export function CommentForm(props: CommentFormProps) {
 		return name ? String(name) : undefined;
 	};
 
+	const isSmallScreen = useIsScreenSmallerThan({
+		sizeBreakpoint: 768,
+	});
+
 	return (
 		<ErrorBoundary
 			fallback={(error, reset) => (
@@ -45,7 +50,7 @@ export function CommentForm(props: CommentFormProps) {
 				onSubmit={props.onSubmit}
 				inReplyTo={getReplyName()}
 				label="Comment"
-				submitText="Post Comment"
+				submitText={isSmallScreen() ? ">" : "Post Comment"}
 				submittingText="Posting..."
 				id={props.id}
 			/>

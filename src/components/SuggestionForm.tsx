@@ -17,7 +17,7 @@ export function SuggestionForm(props: SuggestionFormProps) {
 	const onSubmitSuccess = () => props.onSubmitSuccess;
 	const compact = () => props.compact;
 	const z = useZero();
-	
+
 	// Use the provided category if available; otherwise default to "continue"
 	const selectedCategory = () => props.categoryID ?? "continue";
 
@@ -45,9 +45,8 @@ export function SuggestionForm(props: SuggestionFormProps) {
 
 	return (
 		<BaseForm
-			userIdentifier={z?.userID || ''}
+			userIdentifier={z?.userID || ""}
 			displayName={displayName()}
-			placeholder="Add your suggestion... (Press Enter to submit, Shift+Enter for new line)"
 			onSubmit={handleSubmit}
 			compact={compact() || false}
 			label="Enter your suggestion"

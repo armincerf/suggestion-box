@@ -75,6 +75,7 @@ const user = table("user")
 		id: string(),
 		displayName: string().from("display_name"),
 		avatarUrl: string().optional().from("avatar_url"),
+		createdAt: number().from("created_at"),
 	})
 	.primaryKey("id");
 

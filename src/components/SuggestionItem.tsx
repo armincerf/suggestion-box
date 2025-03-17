@@ -13,6 +13,8 @@ import { formatDistanceToNow } from "date-fns";
 import { useZero } from "../context/ZeroContext";
 import { ReactionButtons } from "./ReactionButtons";
 import { UserAvatar } from "./UserAvatar";
+import { useRelativeTime } from "../hooks/useRelativeTime";
+import { ChevronRight, ChevronRightIcon, ChevronRightSquare, Icon } from "lucide-solid";
 
 interface SuggestionItemProps {
 	suggestion: Suggestion;
@@ -137,10 +139,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const isOwnSuggestion = () =>
 		suggestion().userIdentifier === userIdentifier();
 
-	const relativeDate = () => {
-		const timestamp = new Date(suggestion().timestamp);
-		return formatDistanceToNow(timestamp, { addSuffix: true });
-	};
+	const relativeDate = useRelativeTime(suggestion().timestamp);
 
 	return (
 		<ErrorBoundary
@@ -157,7 +156,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 				Include a shadow, margin, etc.
 			*/}
 			<div
-				class="card w-full bg-base-100 shadow-md my-4 suggestion-item"
+				class="card card-sm sm:card-md lg:card-lg w-full bg-base-100 shadow-md suggestion-item"
 				aria-labelledby={`${suggestionId}-title`}
 			>
 				<div class="card-body">
@@ -332,7 +331,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 						<Suspense fallback={<SkeletonLoader type="comments" count={2} />}>
 							<div
 								class={`mt-4 border-t pt-2 ${
-									commentsExpanded() ? "comments-expanded" : ""
+									commentsExpanded() ? "border-t-2" : ""
 								} ${rootComments().length === 0 ? "opacity-50" : ""}`}
 							>
 								{/* Toggle button to expand/collapse comments */}
@@ -349,10 +348,10 @@ export function SuggestionItem(props: SuggestionItemProps) {
 									<span class="flex items-center gap-1">
 										<span
 											class={`transition-transform ${
-												commentsExpanded() ? "rotate-180" : ""
+												commentsExpanded() ? "rotate-90" : "rotate-0 font-sm"
 											}`}
 										>
-											▼
+											<ChevronRight class="w-4 h-4" />
 										</span>
 										<span>Comments ({suggestion().comments.length || 0})</span>
 									</span>

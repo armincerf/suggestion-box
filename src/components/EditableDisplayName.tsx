@@ -49,7 +49,7 @@ export function EditableDisplayName(props: EditableDisplayNameProps) {
 
   return (
     <div class="flex items-center text-gray-800 dark:text-gray-200">
-      <span class="mr-2">Posting as:</span>
+      <span class="mr-2 hidden sm:block">Posting as:</span>
       <Show
         when={!isEditing()}
         fallback={

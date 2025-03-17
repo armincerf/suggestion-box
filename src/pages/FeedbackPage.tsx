@@ -1,4 +1,4 @@
-import { Show, createMemo, Suspense, Index } from "solid-js";
+import { Show, createMemo, Suspense, Index, onMount, createSignal } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { SuggestionItem } from "../components/SuggestionItem";
 import { ErrorFallback } from "../components/ErrorFallback";
@@ -34,6 +34,20 @@ export function FeedbackPage() {
 		),
 	);
 
+	onMount(() => {
+		if (window.innerWidth < 768) {
+			setTimeout(() => {
+				const xScrollable = document.getElementById("x-scrollable");
+				if (xScrollable) {
+					xScrollable.scrollTo({
+						left: 400,
+						behavior: "smooth",
+					});
+				}
+			}, 100);
+		}
+	});
+
 	return (
 		<div class="h-[100dvh] flex flex-col">
 			<header class={"p-4 h-[var(--header-height)] flex-none"}>
@@ -60,6 +74,7 @@ export function FeedbackPage() {
 						fallback={<SkeletonLoader type="feedback" count={5} />}
 					>
 						<div
+							id="x-scrollable"
 							aria-label={`${suggestions().length} suggestions`}
 							class={cn(
 								"h-full flex flex-nowrap",
@@ -78,13 +93,10 @@ export function FeedbackPage() {
 
 									return (
 										<>
-											{i > 0 && (
-												<div class="divider divider-vertical my-auto" />
-											)}
 											<div
 												class={cn(
 													"card shadow-md",
-													"flex flex-col min-w-[320px] max-w-[95vw] md:min-w-[420px] lg:min-w-[520px]",
+													"flex flex-col min-w-[320px] max-w-[90vw] md:min-w-[420px] lg:min-w-[520px]",
 													"flex-none snap-center bg-[var(--card-background-color)] dark:bg-[var(--card-background-color-dark)]",
 												)}
 												style={{

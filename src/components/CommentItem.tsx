@@ -1,4 +1,4 @@
-import { createSignal, Show, createMemo, Suspense } from "solid-js";
+import { createSignal, Show, createMemo, Suspense, onCleanup } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import type { Comment } from "../schema";
 import { getNameFromUserId } from "../nameGenerator";
@@ -14,6 +14,9 @@ import { useCommentReplies } from "../hooks/useComments";
 import { ReactionButtons } from "./ReactionButtons";
 import { UserAvatar } from "./UserAvatar";
 import { formatDistanceToNow } from "date-fns";
+import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
+import { useRelativeTime } from "../hooks/useRelativeTime";
+import { Modal } from "./Modal";
 
 interface CommentItemProps {
 	comment: Comment;
@@ -24,6 +27,7 @@ interface CommentItemProps {
 
 /**
  * Component for displaying a comment with nested replies
+ * TODO - use a modal for viewing threads on small screens
  */
 export function CommentItem(props: CommentItemProps) {
 	const z = useZero();
@@ -33,14 +37,19 @@ export function CommentItem(props: CommentItemProps) {
 	const depth = props.depth || 0;
 	const maxVisibleReplies = props.maxVisibleReplies || MAX_REPLIES_SHOWN;
 	const { displayName, userIdentifier } = useUser();
+	const isSmallScreen = useIsScreenSmallerThan({
+		sizeBreakpoint: 768,
+	});
 
 	// Use the dedicated hook to fetch replies with reactive updates
 	const { replies: allReplies } = useCommentReplies({
 		commentId: props.comment.id,
 	});
 
+	const maxDepth = isSmallScreen() ? 1 : props.maxDepth || 2;
+
 	// Determine if we should show nested replies based on the depth and expandThread state
-	const canAutoExpandReplies = createMemo(() => depth < 2 || expandThread());
+	const canAutoExpandReplies = createMemo(() => depth < maxDepth || expandThread());
 
 	// Get the comment author's display name
 	const commentAuthor = createMemo(() => {
@@ -50,12 +59,7 @@ export function CommentItem(props: CommentItemProps) {
 		);
 	});
 
-	// Format the relative time
-	const relativeTime = () => {
-		return formatDistanceToNow(new Date(props.comment.timestamp), {
-			addSuffix: true,
-		});
-	};
+	const relativeTime = useRelativeTime(props.comment.timestamp);
 
 	const handleAddReply = async (text: string) => {
 		try {
@@ -178,19 +182,19 @@ export function CommentItem(props: CommentItemProps) {
 							{showReplyForm() ? "Cancel" : "Reply"}
 						</button>
 					</div>
-
-					{showReplyForm() && (
+					
+					<Show when={showReplyForm() && !isSmallScreen()}>
 						<div class="mt-3" id={`reply-form-${props.comment.id}`}>
 							<CommentForm
 								onSubmit={handleAddReply}
-								placeholder="Write a reply..."
+								placeholder={`Reply to ${props.comment.displayName || "Unknown User"}`}
 								id={`reply-form-input-${props.comment.id}`}
 								parentCommentId={props.comment.id}
 								inReplyTo={props.comment.displayName || "Unknown User"}
 								displayName={displayName()}
 							/>
 						</div>
-					)}
+					</Show>
 
 					<ErrorBoundary
 						fallback={(error, reset) => (
@@ -238,6 +242,25 @@ export function CommentItem(props: CommentItemProps) {
 					</ErrorBoundary>
 				</div>
 			</div>
+			{showReplyForm() && isSmallScreen() && (
+				<Modal
+					isOpen={showReplyForm()}
+					onClose={() => setShowReplyForm(false)}
+					title="Reply"
+				>
+					<div class="p-4">
+						<p class="text-sm opacity-70">{props.comment.body}</p>
+					</div>
+					<CommentForm
+						onSubmit={handleAddReply}
+						placeholder="Write a reply..."
+						id={`reply-form-input-${props.comment.id}`}
+						parentCommentId={props.comment.id}
+						inReplyTo={props.comment.displayName || "Unknown User"}
+						displayName={displayName()}
+					/>
+				</Modal>
+			)}
 		</ErrorBoundary>
 	);
 }
