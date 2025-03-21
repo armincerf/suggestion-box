@@ -16,6 +16,7 @@ export interface BaseFormProps {
 	submitText?: string;
 	submittingText?: string;
 	id?: string;
+	autoFocus?: boolean;
 }
 
 export function BaseForm(props: BaseFormProps) {
@@ -98,6 +99,7 @@ export function BaseForm(props: BaseFormProps) {
 						disabled={isSubmitting()}
 						required
 						label={props.label || "Enter your text"}
+						autoFocus={!!props.autoFocus}
 					/>
 
 					<FormToolbar

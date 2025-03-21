@@ -50,9 +50,6 @@ const routes = [
 	},
 ] satisfies RouteDefinition[];
 
-/**
- * Main App component
- */
 function App() {
 	return (
 		<ErrorBoundary

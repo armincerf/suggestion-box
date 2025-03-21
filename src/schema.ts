@@ -15,6 +15,7 @@ import {
 	string,
 	relationships,
 	number,
+	json,
 	type PermissionsConfig,
 	boolean,
 } from "@rocicorp/zero";
@@ -38,6 +39,7 @@ const suggestion = table("suggestion")
 		userIdentifier: string().from("user_identifier"),
 		displayName: string().from("display_name").optional(),
 		categoryID: string().from("category_id"),
+		updatedAt: number().from("updated_at"),
 	})
 	.primaryKey("id");
 
@@ -76,6 +78,8 @@ const user = table("user")
 		displayName: string().from("display_name"),
 		avatarUrl: string().optional().from("avatar_url"),
 		createdAt: number().from("created_at"),
+		updatedAt: number().from("updated_at"),
+		color: string().optional(),
 	})
 	.primaryKey("id");
 
@@ -83,8 +87,11 @@ const user = table("user")
 const session = table("session")
 	.columns({
 		id: string(),
-		startedAt: number().from("started_at"),
+		startedAt: number().from("started_at").optional(),
 		startedBy: string().from("started_by"),
+		endedAt: number().optional().from("ended_at").optional(),
+		users: json<string[]>(),
+		updatedAt: number().from("updated_at").optional(),
 	})
 	.primaryKey("id");
 

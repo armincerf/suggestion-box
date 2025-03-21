@@ -9,17 +9,17 @@ import { MAX_COMMENTS_SHOWN } from "../utils/constants";
 import { randID } from "../rand";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { PaginatedList } from "./PaginatedList";
-import { formatDistanceToNow } from "date-fns";
 import { useZero } from "../context/ZeroContext";
 import { ReactionButtons } from "./ReactionButtons";
 import { UserAvatar } from "./UserAvatar";
 import { useRelativeTime } from "../hooks/useRelativeTime";
-import { ChevronRight, ChevronRightIcon, ChevronRightSquare, Icon } from "lucide-solid";
+import { ChevronRight } from "lucide-solid";
 
-interface SuggestionItemProps {
+export interface SuggestionItemProps {
 	suggestion: Suggestion;
 	userIdentifier: string;
 	displayName: string;
+	readOnly?: boolean;
 }
 
 /**

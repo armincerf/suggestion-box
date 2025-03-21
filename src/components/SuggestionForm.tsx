@@ -7,6 +7,7 @@ interface SuggestionFormProps {
 	onSubmitSuccess?: () => void;
 	compact?: boolean;
 	categoryID?: string;
+	autoFocus?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export function SuggestionForm(props: SuggestionFormProps) {
 				userIdentifier: z.userID,
 				displayName: displayName(),
 				categoryID: selectedCategory(),
+				updatedAt: Date.now(),
 			});
 
 			if (onSubmitSuccess()) {
@@ -53,6 +55,7 @@ export function SuggestionForm(props: SuggestionFormProps) {
 			submitText="Post"
 			submittingText="Posting..."
 			id={`suggestion-form-${selectedCategory()}`}
+			autoFocus={!!props.autoFocus}
 		/>
 	);
 }

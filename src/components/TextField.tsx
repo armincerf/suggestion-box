@@ -9,6 +9,7 @@ interface TextFieldProps {
   required?: boolean;
   label?: string;
   onKeyDown?: (e: KeyboardEvent & { currentTarget: HTMLTextAreaElement }) => void;
+  autoFocus?: boolean;
 }
 
 export function TextField(props: TextFieldProps) {
@@ -30,6 +31,7 @@ export function TextField(props: TextFieldProps) {
         onKeyDown={props.onKeyDown}
         disabled={props.disabled}
         required={props.required}
+        autofocus={props.autoFocus}
       />
 
       {/* Spacer element to match the height of the toolbar */}

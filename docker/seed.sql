@@ -14,16 +14,17 @@ INSERT INTO category (id, name, description) VALUES
 CREATE TABLE suggestion (
     id TEXT PRIMARY KEY,
     body TEXT NOT NULL,
-    timestamp BIGINT NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
     user_identifier TEXT NOT NULL,
     display_name TEXT,
-    category_id TEXT NOT NULL REFERENCES category(id) ON DELETE CASCADE
+    category_id TEXT NOT NULL REFERENCES category(id) ON DELETE CASCADE,
+    updated_at TIMESTAMPTZ
 );
 
 CREATE TABLE comment (
     id TEXT PRIMARY KEY,
     body TEXT NOT NULL,
-    timestamp BIGINT NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
     suggestion_id TEXT NOT NULL REFERENCES suggestion(id) ON DELETE CASCADE,
     parent_comment_id TEXT REFERENCES comment(id) ON DELETE CASCADE,
     selection_start INTEGER,
@@ -39,7 +40,7 @@ CREATE TABLE reaction (
     comment_id TEXT REFERENCES comment(id) ON DELETE CASCADE,
     emoji TEXT NOT NULL,
     user_identifier TEXT NOT NULL,
-    timestamp BIGINT NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
     -- Ensure a reaction is attached to either a suggestion or a comment, but not both
     CONSTRAINT reaction_target_check CHECK (
         (suggestion_id IS NOT NULL AND comment_id IS NULL) OR
@@ -75,14 +76,44 @@ CREATE TABLE IF NOT EXISTS zero_replication (
 CREATE TABLE "user" (
     id TEXT PRIMARY KEY,
     display_name TEXT NOT NULL,
-    avatar_url TEXT
+    avatar_url TEXT,
+    color TEXT,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ
 );
 
 CREATE TABLE session (
     id TEXT PRIMARY KEY,
-    started_at BIGINT NOT NULL,
-    started_by TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
+    started_at TIMESTAMPTZ NOT NULL,
+    started_by TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    ended_at TIMESTAMPTZ,
+    users JSONB,
+    updated_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_session_started_at ON session(started_at DESC);
 CREATE INDEX idx_session_started_by ON session(started_by);
+
+-- updated_at triggers
+CREATE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_session_updated_at
+BEFORE UPDATE ON session
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_suggestion_updated_at
+BEFORE UPDATE ON suggestion
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_updated_at
+BEFORE UPDATE ON "user"
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

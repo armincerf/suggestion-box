@@ -11,6 +11,7 @@ import { randID } from "./rand";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ZeroProvider } from "./context/ZeroContext";
 import { getNameFromUserId } from "./nameGenerator";
+import { cssColorNames } from "./utils/constants";
 
 function must<T>(val: T) {
 	if (!val) {
@@ -110,10 +111,14 @@ function AppLoader() {
 			});
 
 			if (!userExisted) {
+				// css color names
 				z.mutate.user.insert({
 					id: userID,
 					displayName: getNameFromUserId(userID),
 					avatarUrl: `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`,
+					color: cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
 				});
 			}
 

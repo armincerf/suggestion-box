@@ -33,8 +33,9 @@ export function HomePage() {
 			const sessionId = randID();
 			await z.mutate.session.insert({
 				id: sessionId,
-				startedAt: Date.now(),
 				startedBy: userIdentifier,
+				users: [userIdentifier],
+				updatedAt: Date.now(),
 			});
 			navigate(`/sessions/${sessionId}`);
 		} catch (error) {
@@ -55,7 +56,7 @@ export function HomePage() {
 			</header>
 
 			<main class="flex-1 container mx-auto p-4 md:p-8">
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<div class="flex flex-col gap-4">
 					<div class="card bg-base-100 shadow-xl">
 						<div class="card-body">
 							<h2 class="card-title mb-4">Submit Feedback</h2>
@@ -69,7 +70,7 @@ export function HomePage() {
 								)}
 							>
 								<Show when={z}>
-									<SuggestionForm displayName={displayName()} />
+									<SuggestionForm autoFocus displayName={displayName()} />
 								</Show>
 							</ErrorBoundary>
 						</div>
@@ -86,7 +87,7 @@ export function HomePage() {
 								<button
 									type="button"
 									onClick={createNewSession}
-									disabled={true}
+									disabled={isCreatingSession()}
 									class={cn(
 										"btn btn-primary w-full",
 										isCreatingSession() && "loading",
