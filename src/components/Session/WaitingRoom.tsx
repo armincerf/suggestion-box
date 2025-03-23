@@ -13,7 +13,7 @@ interface WaitingRoomProps {
 
 export function WaitingRoom(props: WaitingRoomProps) {
 	const z = useZero();
-	const { userIdentifier, displayName, user } = useUser();
+	const { userId, displayName, user } = useUser();
 	const [showAvatarEditor, setShowAvatarEditor] = createSignal(false);
 	const shareUrl = createMemo(
 		() => `${window.location.origin}/sessions/${props.sessionId}`,
@@ -21,11 +21,11 @@ export function WaitingRoom(props: WaitingRoomProps) {
 	const [isCopied, setIsCopied] = createSignal(false);
 
 	const handleUpdateAvatar = async (newAvatarUrl: string) => {
-		if (!z || !userIdentifier) return;
+		if (!z || !userId) return;
 
 		try {
 			await z.mutate.user.update({
-				id: userIdentifier,
+				id: userId,
 				avatarUrl: newAvatarUrl,
 			});
 			setShowAvatarEditor(false);
@@ -92,8 +92,10 @@ export function WaitingRoom(props: WaitingRoomProps) {
 									</div>
 									<div>
 										<p class="font-medium">{user.displayName}</p>
-										{user.id === userIdentifier && (
-											<span class="text-xs text-indigo-600 dark:text-indigo-400">(You)</span>
+										{user.id === userId && (
+											<span class="text-xs text-indigo-600 dark:text-indigo-400">
+												(You)
+											</span>
 										)}
 									</div>
 								</div>

@@ -1,7 +1,10 @@
 import { Show, createSignal } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
-import { SuggestionForm } from "../components/SuggestionForm";
+import {
+	SuggestionForm,
+	SuggestionFormWithCategoryPicker,
+} from "../components/SuggestionForm";
 import { ErrorFallback } from "../components/ErrorFallback";
 import { useZero } from "../context/ZeroContext";
 import { cn } from "../utils/cn";
@@ -21,11 +24,11 @@ export function HomePageSkeleton() {
 
 export function HomePage() {
 	const z = useZero();
-	const { displayName, userIdentifier } = useUser();
+	const { displayName, userId } = useUser();
 	const navigate = useNavigate();
 	const [isCreatingSession, setIsCreatingSession] = createSignal(false);
 
-	if (!z || !userIdentifier) return <HomePageSkeleton />;
+	if (!z || !userId) return <HomePageSkeleton />;
 
 	const createNewSession = async () => {
 		setIsCreatingSession(true);
@@ -33,8 +36,8 @@ export function HomePage() {
 			const sessionId = randID();
 			await z.mutate.session.insert({
 				id: sessionId,
-				startedBy: userIdentifier,
-				users: [userIdentifier],
+				startedBy: userId,
+				users: [userId],
 				updatedAt: Date.now(),
 			});
 			navigate(`/sessions/${sessionId}`);
@@ -70,7 +73,9 @@ export function HomePage() {
 								)}
 							>
 								<Show when={z}>
-									<SuggestionForm autoFocus displayName={displayName()} />
+									<SuggestionFormWithCategoryPicker
+										displayName={displayName()}
+									/>
 								</Show>
 							</ErrorBoundary>
 						</div>

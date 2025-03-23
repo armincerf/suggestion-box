@@ -17,7 +17,7 @@ import { ChevronRight } from "lucide-solid";
 
 export interface SuggestionItemProps {
 	suggestion: Suggestion;
-	userIdentifier: string;
+	userId: string;
 	displayName: string;
 	readOnly?: boolean;
 }
@@ -27,7 +27,7 @@ export interface SuggestionItemProps {
  */
 export function SuggestionItem(props: SuggestionItemProps) {
 	const suggestion = () => props.suggestion;
-	const userIdentifier = () => props.userIdentifier;
+	const userId = () => props.userId;
 	const displayName = () => props.displayName;
 
 	const z = useZero();
@@ -43,9 +43,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const [commentsExpanded, setCommentsExpanded] = createSignal(false);
 
 	const suggestionAuthor = createMemo(() => {
-		return (
-			suggestion().displayName || getNameFromUserId(suggestion().userIdentifier)
-		);
+		return suggestion().displayName || getNameFromUserId(suggestion().userId);
 	});
 
 	const rootComments = createMemo(() => {
@@ -94,7 +92,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 				selectionStart: sel?.start,
 				selectionEnd: sel?.end,
 				timestamp: Date.now(),
-				userIdentifier: z.userID,
+				userId: z.userID,
 				displayName: displayName(),
 				parentCommentID: null, // Top-level comments have no parent
 				isRootComment: true, // Mark as root comment
@@ -136,8 +134,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	};
 
 	// Check if user is the creator of this suggestion
-	const isOwnSuggestion = () =>
-		suggestion().userIdentifier === userIdentifier();
+	const isOwnSuggestion = () => suggestion().userId === userId();
 
 	const relativeDate = useRelativeTime(suggestion().timestamp);
 
@@ -156,7 +153,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 				Include a shadow, margin, etc.
 			*/}
 			<div
-				class="card card-sm sm:card-md lg:card-lg w-full bg-base-100 shadow-md suggestion-item"
+				class="card card-sm sm:card-md lg:card-lg w-full bg-base-100 shadow-md suggestion-item group-item"
 				aria-labelledby={`${suggestionId}-title`}
 			>
 				<div class="card-body">
@@ -164,7 +161,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 					<div class="flex items-center justify-between suggestion-meta mb-2">
 						<div class="flex items-center gap-2">
 							<UserAvatar
-								userIdentifier={suggestion().userIdentifier}
+								userId={suggestion().userId}
 								displayName={suggestionAuthor()}
 							/>
 							<div class="suggestion-author font-semibold text-md truncate max-w-[200px]">

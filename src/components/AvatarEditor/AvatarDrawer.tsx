@@ -4,7 +4,7 @@ interface AvatarDrawerProps {
 	onUpdate: (dataUrl: string) => void;
 }
 
-type PenColor = "black" | "red" | "green";
+type PenColor = "black" | "red" | "green" | "white";
 
 export function AvatarDrawer(props: AvatarDrawerProps) {
 	const [isDrawing, setIsDrawing] = createSignal(false);
@@ -23,6 +23,7 @@ export function AvatarDrawer(props: AvatarDrawerProps) {
 		{ id: "black", label: "Black", value: "#000000" },
 		{ id: "red", label: "Red", value: "#ff0000" },
 		{ id: "green", label: "Green", value: "#00cc00" },
+		{ id: "white", label: "White", value: "#FFF" },
 	];
 
 	onMount(() => {

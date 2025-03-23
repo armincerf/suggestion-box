@@ -41,7 +41,7 @@ export function ReactionButtons(props: {
 	const entity = () => props.entity;
 	const toggleReaction = async (emoji: string) => {
 		const existingReactionId = entity().reactions?.find(
-			(r) => r.emoji === emoji && r.userIdentifier === z.userID,
+			(r) => r.emoji === emoji && r.userId === z.userID,
 		)?.id;
 
 		try {
@@ -57,7 +57,7 @@ export function ReactionButtons(props: {
 					await z.mutate.reaction.insert({
 						id: randID(),
 						emoji,
-						userIdentifier: z.userID,
+						userId: z.userID,
 						timestamp: Date.now(),
 						commentID: entity().id,
 					});
@@ -66,7 +66,7 @@ export function ReactionButtons(props: {
 					await z.mutate.reaction.insert({
 						id: randID(),
 						emoji,
-						userIdentifier: z.userID,
+						userId: z.userID,
 						timestamp: Date.now(),
 						suggestionID: entity().id,
 					});
@@ -107,7 +107,7 @@ export function ReactionButtons(props: {
 								}
 								isReacted={
 									entity().reactions?.find(
-										(r) => r.emoji === emoji() && r.userIdentifier === z.userID,
+										(r) => r.emoji === emoji() && r.userId === z.userID,
 									) !== undefined
 								}
 								onToggle={toggleReaction}

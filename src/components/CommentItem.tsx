@@ -36,7 +36,7 @@ export function CommentItem(props: CommentItemProps) {
 	const [expandThread, setExpandThread] = createSignal(false);
 	const depth = props.depth || 0;
 	const maxVisibleReplies = props.maxVisibleReplies || MAX_REPLIES_SHOWN;
-	const { displayName, userIdentifier } = useUser();
+	const { displayName, userId } = useUser();
 	const isSmallScreen = useIsScreenSmallerThan({
 		sizeBreakpoint: 768,
 	});
@@ -49,14 +49,13 @@ export function CommentItem(props: CommentItemProps) {
 	const maxDepth = isSmallScreen() ? 1 : props.maxDepth || 2;
 
 	// Determine if we should show nested replies based on the depth and expandThread state
-	const canAutoExpandReplies = createMemo(() => depth < maxDepth || expandThread());
+	const canAutoExpandReplies = createMemo(
+		() => depth < maxDepth || expandThread(),
+	);
 
 	// Get the comment author's display name
 	const commentAuthor = createMemo(() => {
-		return (
-			props.comment.displayName ||
-			getNameFromUserId(props.comment.userIdentifier)
-		);
+		return props.comment.displayName || getNameFromUserId(props.comment.userId);
 	});
 
 	const relativeTime = useRelativeTime(props.comment.timestamp);
@@ -69,7 +68,7 @@ export function CommentItem(props: CommentItemProps) {
 				suggestionID: props.comment.suggestionID,
 				parentCommentID: props.comment.id,
 				timestamp: Date.now(),
-				userIdentifier: z.userID,
+				userId: z.userID,
 				displayName: displayName() || "Anonymous",
 				isRootComment: false,
 			});
@@ -96,7 +95,7 @@ export function CommentItem(props: CommentItemProps) {
 	};
 
 	// Check if user is the creator of this comment
-	const isOwnComment = () => props.comment.userIdentifier === userIdentifier;
+	const isOwnComment = () => props.comment.userId === userId;
 	const commentId = `comment-${props.comment.id}`;
 	const replyButtonId = `reply-button-${props.comment.id}`;
 
@@ -132,10 +131,10 @@ export function CommentItem(props: CommentItemProps) {
 				}}
 			>
 				<UserAvatar
-					userIdentifier={props.comment.userIdentifier}
+					userId={props.comment.userId}
 					displayName={commentAuthor()}
 					size="sm"
-					editable={props.comment.userIdentifier === userIdentifier}
+					editable={props.comment.userId === userId}
 				/>
 
 				<div class="flex-1 space-y-2">
@@ -182,7 +181,7 @@ export function CommentItem(props: CommentItemProps) {
 							{showReplyForm() ? "Cancel" : "Reply"}
 						</button>
 					</div>
-					
+
 					<Show when={showReplyForm() && !isSmallScreen()}>
 						<div class="mt-3" id={`reply-form-${props.comment.id}`}>
 							<CommentForm

@@ -27,7 +27,7 @@ export function SessionPage() {
 	const params = useParams<{ sessionId: string }>();
 	const navigate = useNavigate();
 	const z = useZero();
-	const { userIdentifier } = useUser();
+	const { userId } = useUser();
 
 	// UI state using signals (not Zero data)
 	const [isLoading, setIsLoading] = createSignal(true);
@@ -66,7 +66,7 @@ export function SessionPage() {
 
 	// Check if current user is session leader
 	const isSessionLeader = createMemo(() => {
-		return sessionData()?.startedBy === userIdentifier;
+		return sessionData()?.startedBy === userId;
 	});
 
 	const isSessionStarted = createMemo(() => {
@@ -79,12 +79,12 @@ export function SessionPage() {
 
 	// Add current user to session if not already present
 	createEffect(async () => {
-		if (!z || !userIdentifier || !params.sessionId) return;
+		if (!z || !userId || !params.sessionId) return;
 
 		const session = sessionData();
-		if (session && !session.users.includes(userIdentifier)) {
+		if (session && !session.users.includes(userId)) {
 			// Add user to session
-			const updatedUsers = [...session.users, userIdentifier];
+			const updatedUsers = [...session.users, userId];
 			await z.mutate.session.update({
 				id: params.sessionId,
 				users: updatedUsers,
@@ -92,7 +92,7 @@ export function SessionPage() {
 			});
 		}
 
-		console.log("createEffect 3", userIdentifier, params.sessionId);
+		console.log("createEffect 3", userId, params.sessionId);
 		setIsLoading(false);
 		console.log("isLoading", isLoading());
 	});

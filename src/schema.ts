@@ -36,7 +36,7 @@ const suggestion = table("suggestion")
 		id: string(),
 		body: string(),
 		timestamp: number(),
-		userIdentifier: string().from("user_identifier"),
+		userId: string().from("user_id"),
 		displayName: string().from("display_name").optional(),
 		categoryID: string().from("category_id"),
 		updatedAt: number().from("updated_at"),
@@ -54,7 +54,7 @@ const comment = table("comment")
 		// For selection-based comments
 		selectionStart: number().from("selection_start").optional(),
 		selectionEnd: number().from("selection_end").optional(),
-		userIdentifier: string().from("user_identifier"),
+		userId: string().from("user_id"),
 		displayName: string().from("display_name").optional(),
 	})
 	.primaryKey("id");
@@ -66,7 +66,7 @@ const reaction = table("reaction")
 		suggestionID: string().from("suggestion_id").optional(),
 		commentID: string().from("comment_id").optional(),
 		emoji: string(),
-		userIdentifier: string().from("user_identifier"),
+		userId: string().from("user_id"),
 		timestamp: number(),
 	})
 	.primaryKey("id");
@@ -206,8 +206,8 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		authData: AuthData,
 		{ cmp }: ExpressionBuilder<Schema, "suggestion">,
 	) => {
-		// We're using userIdentifier field to match with localStorage ID
-		return cmp("userIdentifier", authData.sub ?? "");
+		// We're using userId field to match with localStorage ID
+		return cmp("userId", authData.sub ?? "");
 	};
 
 	// Allow users to only delete their own comments
@@ -215,7 +215,7 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		authData: AuthData,
 		{ cmp }: ExpressionBuilder<Schema, "comment">,
 	) => {
-		return cmp("userIdentifier", authData.sub ?? "");
+		return cmp("userId", authData.sub ?? "");
 	};
 
 	// Allow users to only delete their own reactions
@@ -223,7 +223,7 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		authData: AuthData,
 		{ cmp }: ExpressionBuilder<Schema, "reaction">,
 	) => {
-		return cmp("userIdentifier", authData.sub ?? "");
+		return cmp("userId", authData.sub ?? "");
 	};
 
 	// Allow users to only update their own user name

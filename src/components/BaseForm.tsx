@@ -6,7 +6,7 @@ import { UserAvatar } from "./UserAvatar";
 import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
 
 export interface BaseFormProps {
-	userIdentifier: string;
+	userId: string;
 	displayName: string;
 	placeholder?: string;
 	onSubmit: (text: string) => Promise<void>;
@@ -66,7 +66,7 @@ export function BaseForm(props: BaseFormProps) {
 			class={`flex items-start ${props.compact ? "space-x-2" : "space-x-4"}`}
 		>
 			<UserAvatar
-				userIdentifier={props.userIdentifier}
+				userId={props.userId}
 				displayName={props.displayName}
 				size={isSmallScreen() ? "sm" : "md"}
 				editable={true}

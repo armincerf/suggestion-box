@@ -1,4 +1,12 @@
-import { Show, createMemo, Suspense, Index, onMount, createSignal } from "solid-js";
+import {
+	Show,
+	createMemo,
+	Suspense,
+	Index,
+	onMount,
+	createSignal,
+	For,
+} from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { SuggestionItem } from "../components/SuggestionItem";
 import { ErrorFallback } from "../components/ErrorFallback";
@@ -8,8 +16,9 @@ import { useCategories } from "../hooks/useCategories";
 import { useZero } from "../context/ZeroContext";
 import { cn } from "../utils/cn";
 import { useUser } from "../hooks/useUser";
-import { useSuggestions } from "../hooks/useSuggestions";
+import { useSuggestionRating, useSuggestions } from "../hooks/useSuggestions";
 import { darkenHexString } from "../utils/colorUtils";
+import { TransitionGroup } from "solid-transition-group";
 
 export function FeedbackPageSkeleton() {
 	return (
@@ -21,17 +30,28 @@ export function FeedbackPageSkeleton() {
 
 export function FeedbackPage() {
 	const z = useZero();
-	const { displayName, userIdentifier } = useUser();
-	if (!z || !userIdentifier) return <FeedbackPageSkeleton />;
+	const { displayName, userId } = useUser();
+	if (!z || !userId) return <FeedbackPageSkeleton />;
 
 	const [categories] = useCategories();
 	const [suggestions] = useSuggestions();
 
 	const visibleCategoryList = createMemo(() =>
-		categories().filter(
-			(category) =>
-				suggestions().filter((s) => s.categoryID === category.id).length > 0,
-		),
+		categories()
+			.filter(
+				(category) =>
+					suggestions().filter((s) => s.categoryID === category.id).length > 0,
+			)
+			.sort((a, b) => {
+				// start, stop, continue - otherwise alphabetical
+				if (a.name === "Start") return -1;
+				if (b.name === "Start") return 1;
+				if (a.name === "Stop") return -1;
+				if (b.name === "Stop") return 1;
+				if (a.name === "Continue") return -1;
+				if (b.name === "Continue") return 1;
+				return a.name.localeCompare(b.name);
+			}),
 	);
 
 	onMount(() => {
@@ -84,7 +104,7 @@ export function FeedbackPage() {
 							)}
 						>
 							<Index each={visibleCategoryList()}>
-								{(category, i) => {
+								{(category) => {
 									const backgroundColor = category().backgroundColor;
 									const backgroundColorDark = darkenHexString(
 										backgroundColor,
@@ -96,7 +116,7 @@ export function FeedbackPage() {
 											<div
 												class={cn(
 													"card shadow-md",
-													"flex flex-col min-w-[320px] max-w-[90vw] md:min-w-[420px] lg:min-w-[520px]",
+													"flex flex-col min-w-[320px] max-w-[90vw] md:min-w-[420px] lg:min-w-[520px] w-min",
 													"flex-none snap-center bg-[var(--card-background-color)] dark:bg-[var(--card-background-color-dark)]",
 												)}
 												style={{
@@ -110,32 +130,45 @@ export function FeedbackPage() {
 													<p class="text-sm text-base-content/70 mb-2">
 														{category().description}
 													</p>
-													<div class={cn("space-y-2 overflow-y-auto")}>
-														<Index
-															each={suggestions().filter(
-																(s) => s.categoryID === category().id,
-															)}
+													<ul class={cn("space-y-2 overflow-y-auto")}>
+														<TransitionGroup
+															moveClass="group-item"
+															name="slide"
 														>
-															{(suggestion) => (
-																<Suspense
-																	fallback={
-																		<SkeletonLoader
-																			type="suggestion"
-																			count={1}
-																		/>
-																	}
-																>
-																	<div class="snap-start snap-always py-1">
-																		<SuggestionItem
-																			suggestion={suggestion()}
-																			userIdentifier={userIdentifier}
-																			displayName={displayName()}
-																		/>
-																	</div>
-																</Suspense>
-															)}
-														</Index>
-													</div>
+															<For
+																each={suggestions()
+																	.filter((s) => s.categoryID === category().id)
+																	.sort(
+																		(a, b) =>
+																			useSuggestionRating(
+																				b.reactions.map((r) => r.emoji),
+																			) -
+																			useSuggestionRating(
+																				a.reactions.map((r) => r.emoji),
+																			),
+																	)}
+															>
+																{(suggestion) => (
+																	<Suspense
+																		fallback={
+																			<SkeletonLoader
+																				type="suggestion"
+																				count={1}
+																			/>
+																		}
+																	>
+																		<div class="snap-start snap-always py-1">
+																			<SuggestionItem
+																				suggestion={suggestion}
+																				userId={userId}
+																				displayName={displayName()}
+																			/>
+																		</div>
+																	</Suspense>
+																)}
+															</For>
+														</TransitionGroup>
+													</ul>
 												</div>
 												<div class="border-t flex-none p-4">
 													<SuggestionForm

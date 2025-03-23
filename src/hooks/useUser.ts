@@ -12,10 +12,12 @@ export function useUser() {
 	const z = useZero();
 	const userId = z.userID;
 	const [userData] = useQuery(() => userQuery(z), { ttl: "forever" });
-	
+
 	return {
 		user: userData,
-		displayName: createMemo(() => userData()?.displayName || getNameFromUserId(userId)),
-		userIdentifier: userId,
+		displayName: createMemo(
+			() => userData()?.displayName || getNameFromUserId(userId),
+		),
+		userId: userId,
 	};
 }

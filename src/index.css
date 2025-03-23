@@ -6,3 +6,16 @@
 	--footer-height: 168px;
 	--main-height: calc(100dvh - var(--header-height) - var(--footer-height));
 }
+
+.group-item {
+  transition: all 0.5s;
+}
+
+.group-item-enter,
+.group-item-exit-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.group-item-exit-active {
+  position: absolute;
+}

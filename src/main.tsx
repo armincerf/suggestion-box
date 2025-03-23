@@ -100,7 +100,7 @@ function AppLoader() {
 
 			const decodedJWT = encodedJWT && decodeJWT(encodedJWT);
 			const userID = decodedJWT?.sub ? decodedJWT.sub : "anon";
-			localStorage.setItem("userIdentifier", userID);
+			localStorage.setItem("userId", userID);
 
 			const z = createZero({
 				userID,
@@ -116,7 +116,8 @@ function AppLoader() {
 					id: userID,
 					displayName: getNameFromUserId(userID),
 					avatarUrl: `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`,
-					color: cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
+					color:
+						cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
 					createdAt: Date.now(),
 					updatedAt: Date.now(),
 				});

@@ -1,7 +1,7 @@
 // Constants used throughout the application
 
 // Common emojis used for reactions
-export const COMMON_EMOJIS = ["👍", "👎", "❤️", "😂", "😮"];
+export const COMMON_EMOJIS = ["👍", "👎"];
 
 // Pagination constants
 export const MAX_REPLIES_SHOWN = 10;

@@ -58,7 +58,7 @@ function AvatarDetails(props: {
 }
 
 interface UserAvatarProps {
-	userIdentifier: string;
+	userId: string;
 	displayName: string;
 	size?: "sm" | "md" | "lg";
 	class?: string;
@@ -69,13 +69,12 @@ export function UserAvatar(props: UserAvatarProps) {
 	const z = useZero();
 	const [isHovered, setIsHovered] = createSignal(false);
 	const [showEditor, setShowEditor] = createSignal(false);
-	const isCurrentUser = () => props.userIdentifier === z.userID;
+	const isCurrentUser = () => props.userId === z.userID;
 	const editable = () => props.editable !== false && isCurrentUser();
 
-	const [user] = useQuery(
-		() => z.query.user.where("id", props.userIdentifier).one(),
-		{ ttl: "forever" },
-	);
+	const [user] = useQuery(() => z.query.user.where("id", props.userId).one(), {
+		ttl: "forever",
+	});
 
 	const avatarUrl = () => {
 		// Use the user's avatar if available, otherwise use a default

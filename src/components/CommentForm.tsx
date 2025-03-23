@@ -45,7 +45,7 @@ export function CommentForm(props: CommentFormProps) {
 			)}
 		>
 			<BaseForm
-				userIdentifier={z?.userID || ""}
+				userId={z?.userID || ""}
 				displayName={props.displayName}
 				placeholder={props.placeholder || "Add your comment..."}
 				onSubmit={props.onSubmit}

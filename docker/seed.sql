@@ -6,16 +6,16 @@ CREATE TABLE category (
 );
 
 -- Insert default categories
-INSERT INTO category (id, name, description) VALUES 
-('start', 'Start', 'Things we should start doing'),
-('stop', 'Stop', 'Things we should stop doing'),
-('continue', 'Continue', 'Things we should continue doing');
+INSERT INTO category (id, name, description, background_color) VALUES 
+('start', 'Start', 'Things we should start doing', '#BEE1Ce'),
+('stop', 'Stop', 'Things we should stop doing', '#e4bfcf'),
+('continue', 'Continue', 'Things we should continue doing', '#c3d2db');
 
 CREATE TABLE suggestion (
     id TEXT PRIMARY KEY,
     body TEXT NOT NULL,
     timestamp TIMESTAMPTZ NOT NULL,
-    user_identifier TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     display_name TEXT,
     category_id TEXT NOT NULL REFERENCES category(id) ON DELETE CASCADE,
     updated_at TIMESTAMPTZ
@@ -29,7 +29,7 @@ CREATE TABLE comment (
     parent_comment_id TEXT REFERENCES comment(id) ON DELETE CASCADE,
     selection_start INTEGER,
     selection_end INTEGER,
-    user_identifier TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     display_name TEXT,
     is_root_comment BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -39,7 +39,7 @@ CREATE TABLE reaction (
     suggestion_id TEXT REFERENCES suggestion(id) ON DELETE CASCADE,
     comment_id TEXT REFERENCES comment(id) ON DELETE CASCADE,
     emoji TEXT NOT NULL,
-    user_identifier TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     timestamp TIMESTAMPTZ NOT NULL,
     -- Ensure a reaction is attached to either a suggestion or a comment, but not both
     CONSTRAINT reaction_target_check CHECK (
@@ -49,17 +49,17 @@ CREATE TABLE reaction (
 );
 
 CREATE INDEX idx_suggestion_timestamp ON suggestion(timestamp DESC);
-CREATE INDEX idx_suggestion_user_identifier ON suggestion(user_identifier);
+CREATE INDEX idx_suggestion_user_id ON suggestion(user_id);
 CREATE INDEX idx_suggestion_category_id ON suggestion(category_id);
 
 CREATE INDEX idx_comment_suggestion_id ON comment(suggestion_id);
 CREATE INDEX idx_comment_parent_comment_id ON comment(parent_comment_id);
-CREATE INDEX idx_comment_user_identifier ON comment(user_identifier);
+CREATE INDEX idx_comment_user_id ON comment(user_id);
 CREATE INDEX idx_comment_timestamp ON comment(timestamp DESC);
 
 CREATE INDEX idx_reaction_suggestion_id ON reaction(suggestion_id);
 CREATE INDEX idx_reaction_comment_id ON reaction(comment_id);
-CREATE INDEX idx_reaction_user_identifier ON reaction(user_identifier);
+CREATE INDEX idx_reaction_user_id ON reaction(user_id);
 CREATE INDEX idx_reaction_emoji ON reaction(emoji);
 
 CREATE TABLE IF NOT EXISTS zero_permissions (
@@ -84,7 +84,7 @@ CREATE TABLE "user" (
 
 CREATE TABLE session (
     id TEXT PRIMARY KEY,
-    started_at TIMESTAMPTZ NOT NULL,
+    started_at TIMESTAMPTZ,
     started_by TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     ended_at TIMESTAMPTZ,
     users JSONB,

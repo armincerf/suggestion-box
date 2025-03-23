@@ -22,7 +22,7 @@ interface SessionBoardProps {
 }
 
 export function SessionBoard(props: SessionBoardProps) {
-	const { userIdentifier, displayName } = useUser();
+	const { userId, displayName } = useUser();
 	const [categories] = useCategories();
 	const [showConfirmEnd, setShowConfirmEnd] = createSignal(false);
 
@@ -96,7 +96,9 @@ export function SessionBoard(props: SessionBoardProps) {
 							fallback={
 								<div class="flex items-center justify-center h-full">
 									<div class="text-center p-6 bg-white dark:bg-base-700 rounded-lg shadow-md max-w-md">
-										<h2 class="text-2xl font-bold mb-4 dark:text-white">No suggestions yet</h2>
+										<h2 class="text-2xl font-bold mb-4 dark:text-white">
+											No suggestions yet
+										</h2>
 										<p class="mb-6 dark:text-gray-300">
 											No suggestions have been added during this session. Be the
 											first to add one!
@@ -164,7 +166,7 @@ export function SessionBoard(props: SessionBoardProps) {
 																	<div class="snap-start snap-always py-1">
 																		<SuggestionItem
 																			suggestion={suggestion()}
-																			userIdentifier={userIdentifier}
+																			userId={userId}
 																			displayName={displayName()}
 																			readOnly={props.isSessionEnded}
 																		/>

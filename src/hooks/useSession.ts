@@ -100,7 +100,7 @@ export function useActiveSessionSuggestions(
 
 export async function createSessionWithUsers(
 	z: Zero<Schema>,
-	userIdentifier: string,
+	userId: string,
 	options: {
 		startNow?: boolean;
 	} = {},
@@ -109,8 +109,8 @@ export async function createSessionWithUsers(
 	await z.mutate.session.insert({
 		id: sessionId,
 		startedAt: options.startNow ? Date.now() : 0,
-		startedBy: userIdentifier,
-		users: [userIdentifier],
+		startedBy: userId,
+		users: [userId],
 		updatedAt: Date.now(),
 	});
 	return sessionId;
@@ -119,15 +119,15 @@ export async function createSessionWithUsers(
 export async function updateSessionUsers(
 	z: Zero<Schema>,
 	sessionId: string,
-	userIdentifier: string,
+	userId: string,
 ): Promise<void> {
 	const session = await z.query.session.where("id", "=", sessionId).one().run();
 	if (!session) {
 		throw new Error(`Session with ID ${sessionId} not found`);
 	}
 
-	if (!session.users.includes(userIdentifier)) {
-		const updatedUsers = [...session.users, userIdentifier];
+	if (!session.users.includes(userId)) {
+		const updatedUsers = [...session.users, userId];
 		await z.mutate.session.update({
 			id: sessionId,
 			users: updatedUsers,
