@@ -1,0 +1,74 @@
+# Add HyperDX logging configuration anchors
+x-hyperdx-logging: &hyperdx-logging
+  driver: fluentd
+  options:
+    fluentd-address: tls://in-otel.hyperdx.io:24225
+    labels: '__HDX_API_KEY,service.name'
+x-hyperdx-key: &hyperdx-key
+  __HDX_API_KEY: a64b47e8-0592-478b-b780-2b0a86ad4112
+
+services:
+  postgres:
+    image: postgres:16.2-alpine
+    shm_size: 1g
+    user: postgres
+    restart: always
+    # Add HyperDX logging
+    logging: *hyperdx-logging
+    labels:
+      <<: *hyperdx-key
+      service.name: postgres
+    healthcheck:
+      test: 'pg_isready -U user --dbname=postgres'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: password
+    command: |
+      postgres 
+      -c wal_level=logical
+      -c max_wal_senders=10 
+      -c max_replication_slots=5 
+      -c hot_standby=on 
+      -c hot_standby_feedback=on
+    volumes:
+      - zstart_solid_pgdata:/var/lib/postgresql/data
+      - ./docker:/docker-entrypoint-initdb.d
+
+  zero-cache:
+    image: oven/bun:latest
+    logging: *hyperdx-logging
+    labels:
+      <<: *hyperdx-key
+      service.name: zero-cache
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /tmp:/tmp
+    environment:
+      - ZERO_UPSTREAM_DB=postgresql://user:password@postgres/postgres
+      - ZERO_AUTH_SECRET=suggestion-box-secret-key
+      - ZERO_REPLICA_FILE=/tmp/zstart_solid_replica.db
+    command: bun run dev:zero-cache
+    ports:
+      - "4848:4848"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - docker-zero-cache
+
+volumes:
+  zstart_solid_pgdata:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  backend_node_modules:
+    driver: local
+  bun_install_cache:
+    driver: local 

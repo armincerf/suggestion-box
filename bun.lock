@@ -25,6 +25,7 @@
         "@types/uuid": "^10.0.0",
         "daisyui": "^5.0.9",
         "drizzle-kit": "^0.30.5",
+        "hyperdx": "^0.0.0",
         "rollup-plugin-visualizer": "^5.14.0",
         "terser": "^5.39.0",
         "tsx": "^4.19.3",
@@ -701,6 +702,8 @@
     "hasown": ["hasown@2.0.2", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ=="],
 
     "html-entities": ["html-entities@2.3.3", "", {}, "sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA=="],
+
+    "hyperdx": ["hyperdx@0.0.0", "", {}, "sha512-1Nu/FHnFemIND7acBmQy0W/UYX9ngbWyznIO9+9JcOKwcJ6TmElPgvkrBmkhSjZFF3sgiXEQx0/Wo+9FFaxzxg=="],
 
     "ieee754": ["ieee754@1.2.1", "", {}, "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA=="],
 
