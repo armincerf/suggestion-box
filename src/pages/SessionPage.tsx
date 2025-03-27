@@ -5,6 +5,7 @@ import {
 	Match,
 	Show,
 	createMemo,
+	onMount,
 } from "solid-js";
 import { useParams, useNavigate } from "@solidjs/router";
 import { useZero } from "../context/ZeroContext";
@@ -17,11 +18,10 @@ import {
 	useSession,
 	useSessionUsers,
 	useSuggestionsToReview,
-	useActiveSessionSuggestions,
-	startSession as startSessionMutation,
 	endSession as endSessionMutation,
 } from "../hooks/useSession";
-import type { Session, User, Suggestion } from "../schema";
+import type { User } from "../zero-schema";
+import { logger } from "../../hyperdx-logger";
 
 export function SessionPage() {
 	const params = useParams<{ sessionId: string }>();
@@ -29,12 +29,8 @@ export function SessionPage() {
 	const z = useZero();
 	const { userId } = useUser();
 
-	// UI state using signals (not Zero data)
 	const [isLoading, setIsLoading] = createSignal(true);
 	const [error, setError] = createSignal<string | null>(null);
-	const [reviewCompleted, setReviewCompleted] = createSignal(false);
-
-	// Use hooks to load data from Zero
 	const [sessionData] = useSession(params.sessionId);
 	const [users] = useSessionUsers(params.sessionId);
 
@@ -45,17 +41,9 @@ export function SessionPage() {
 	// Get suggestions to review
 	const [suggestionsToReview] = useSuggestionsToReview(
 		params.sessionId,
-		startedAt(),
-		reviewCompleted(),
+		startedAt,
 	);
-
-	// Get active session suggestions
-	const [activeSuggestions] = useActiveSessionSuggestions(
-		startedAt(),
-		endedAt(),
-	);
-
-	console.log("activeSuggestions", activeSuggestions());
+	const currentSuggestion = createMemo(() => suggestionsToReview()[0]);
 
 	// Filter users to only those in the session
 	const sessionUsers = createMemo<User[]>(() => {
@@ -70,6 +58,7 @@ export function SessionPage() {
 	});
 
 	const isSessionStarted = createMemo(() => {
+		console.log("sessionData()?.startedAt", sessionData()?.startedAt);
 		return (sessionData()?.startedAt || 0) > 0;
 	});
 
@@ -77,24 +66,36 @@ export function SessionPage() {
 		return !!sessionData()?.endedAt;
 	});
 
-	// Add current user to session if not already present
-	createEffect(async () => {
+	// if the session doesn't exist, create it
+	// with whatever the id in the url is
+	onMount(() => {
+		if (!sessionData()) {
+			z.mutate.sessions.insert({
+				id: params.sessionId,
+				users: [userId],
+				startedBy: userId,
+			});
+		}
+	});
+
+	createEffect(() => {
 		if (!z || !userId || !params.sessionId) return;
 
 		const session = sessionData();
-		if (session && !session.users.includes(userId)) {
+		if (session?.users && !session.users.includes(userId)) {
+			logger.info("Adding user to session", {
+				userId,
+				sessionId: params.sessionId,
+			});
 			// Add user to session
 			const updatedUsers = [...session.users, userId];
-			await z.mutate.session.update({
+			z.mutate.sessions.update({
 				id: params.sessionId,
 				users: updatedUsers,
 				updatedAt: Date.now(),
 			});
 		}
-
-		console.log("createEffect 3", userId, params.sessionId);
 		setIsLoading(false);
-		console.log("isLoading", isLoading());
 	});
 
 	// Handle errors if session not found
@@ -104,31 +105,22 @@ export function SessionPage() {
 		}
 	});
 
-	// Start the session
-	const handleStartSession = async () => {
-		if (!z || !sessionData() || !isSessionLeader()) return;
-
-		try {
-			await startSessionMutation(z, params.sessionId);
-		} catch (error) {
-			console.error("Error starting session:", error);
-		}
-	};
-
 	// End the session
 	const handleEndSession = async () => {
 		if (!z || !sessionData() || !isSessionLeader()) return;
 
 		try {
 			await endSessionMutation(z, params.sessionId);
+			logger.info("Session ended", {
+				sessionId: params.sessionId,
+				endedBy: userId,
+			});
 		} catch (error) {
-			console.error("Error ending session:", error);
+			logger.error(
+				"Error ending session",
+				error instanceof Error ? error : new Error(String(error)),
+			);
 		}
-	};
-
-	// Mark review as completed
-	const completeReview = () => {
-		setReviewCompleted(true);
 	};
 
 	if (error()) {
@@ -147,9 +139,16 @@ export function SessionPage() {
 			</div>
 		);
 	}
+	logger.debug("Session page state", {
+		isLoading: isLoading(),
+		isSessionStarted: isSessionStarted(),
+		isSessionEnded: isSessionEnded(),
+		suggestionsCount: suggestionsToReview().length,
+		sessionId: params.sessionId,
+	});
 
 	return (
-		<div class="container mx-auto p-6 dark:bg-base-900">
+		<div class="dark:bg-base-900">
 			<Show when={isLoading()}>
 				<LoadingSpinner />
 			</Show>
@@ -160,23 +159,6 @@ export function SessionPage() {
 						sessionId={params.sessionId}
 						users={sessionUsers()}
 						isSessionLeader={isSessionLeader()}
-						onStartSession={handleStartSession}
-					/>
-				</Match>
-
-				{/* Active Session - Suggestion Review */}
-				<Match
-					when={
-						isSessionStarted() &&
-						suggestionsToReview().length > 0 &&
-						!reviewCompleted()
-					}
-				>
-					<SuggestionReviewer
-						suggestions={suggestionsToReview() as Suggestion[]}
-						onComplete={completeReview}
-						isSessionLeader={isSessionLeader()}
-						isSessionEnded={isSessionEnded()}
 					/>
 				</Match>
 
@@ -184,18 +166,37 @@ export function SessionPage() {
 				<Match
 					when={
 						isSessionStarted() &&
-						(reviewCompleted() || suggestionsToReview().length === 0)
+						suggestionsToReview().length === 0
 					}
 				>
 					<SessionBoard
 						sessionId={params.sessionId}
-						sessionData={sessionData() as Session}
-						users={sessionUsers()}
+						sessionStartedAt={startedAt()}
+						sessionEndedAt={endedAt()}
 						isSessionLeader={isSessionLeader()}
 						isSessionEnded={isSessionEnded()}
 						isSessionStarted={isSessionStarted()}
 						onEndSession={handleEndSession}
 					/>
+				</Match>
+
+				{/* Active Session - Suggestion Review */}
+				<Match
+					when={
+						isSessionStarted() &&
+						suggestionsToReview().length > 0
+					}
+				>
+					<Show when={currentSuggestion()}>
+						{(currentSuggestion) => (
+							<SuggestionReviewer
+								users={sessionUsers()}
+								currentSuggestion={currentSuggestion}
+								isSessionLeader={isSessionLeader()}
+								isSessionEnded={isSessionEnded()}
+							/>
+						)}
+					</Show>
 				</Match>
 			</Switch>
 		</div>

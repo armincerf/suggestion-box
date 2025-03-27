@@ -1,6 +1,6 @@
-import { createSignal, Show, createMemo, Suspense, onCleanup } from "solid-js";
+import { createSignal, Show, createMemo, Suspense } from "solid-js";
 import { ErrorBoundary } from "solid-js";
-import type { Comment } from "../schema";
+import type { Comment } from "../zero-schema";
 import { getNameFromUserId } from "../nameGenerator";
 import CommentForm from "./CommentForm";
 import { ErrorFallback } from "./ErrorFallback";
@@ -13,7 +13,6 @@ import { useUser } from "../hooks/useUser";
 import { useCommentReplies } from "../hooks/useComments";
 import { ReactionButtons } from "./ReactionButtons";
 import { UserAvatar } from "./UserAvatar";
-import { formatDistanceToNow } from "date-fns";
 import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
 import { useRelativeTime } from "../hooks/useRelativeTime";
 import { Modal } from "./Modal";
@@ -62,11 +61,11 @@ export function CommentItem(props: CommentItemProps) {
 
 	const handleAddReply = async (text: string) => {
 		try {
-			await z.mutate.comment.insert({
+			await z.mutate.comments.insert({
 				id: randID(),
 				body: text,
-				suggestionID: props.comment.suggestionID,
-				parentCommentID: props.comment.id,
+				suggestionId: props.comment.suggestionId,
+				parentCommentId: props.comment.id,
 				timestamp: Date.now(),
 				userId: z.userID,
 				displayName: displayName() || "Anonymous",
@@ -85,7 +84,7 @@ export function CommentItem(props: CommentItemProps) {
 
 		setIsDeleting(true);
 		try {
-			await z.mutate.comment.delete({ id: props.comment.id });
+			await z.mutate.comments.delete({ id: props.comment.id });
 		} catch (error) {
 			console.error("Failed to delete comment:", error);
 			throw error; // Re-throw to be caught by ErrorBoundary

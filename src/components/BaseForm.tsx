@@ -65,13 +65,6 @@ export function BaseForm(props: BaseFormProps) {
 		<div
 			class={`flex items-start ${props.compact ? "space-x-2" : "space-x-4"}`}
 		>
-			<UserAvatar
-				userId={props.userId}
-				displayName={props.displayName}
-				size={isSmallScreen() ? "sm" : "md"}
-				editable={true}
-			/>
-
 			<div class="min-w-0 flex-1">
 				<form onSubmit={handleSubmit} class="relative" id={props.id}>
 					<Show when={props.inReplyTo}>
@@ -110,7 +103,13 @@ export function BaseForm(props: BaseFormProps) {
 					/>
 				</form>
 
-				<div class="form-control mt-2">
+				<div class="form-control mt-2 flex items-center gap-2">
+					<UserAvatar
+						userId={props.userId}
+						displayName={props.displayName}
+						size={isSmallScreen() ? "sm" : "md"}
+						editable={true}
+					/>
 					<EditableDisplayName displayName={props.displayName} />
 				</div>
 			</div>

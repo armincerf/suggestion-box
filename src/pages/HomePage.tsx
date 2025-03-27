@@ -1,14 +1,12 @@
-import { Show, createSignal } from "solid-js";
+import { Show, createSignal, createMemo } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
-import {
-	SuggestionForm,
-	SuggestionFormWithCategoryPicker,
-} from "../components/SuggestionForm";
+import { SuggestionFormWithCategoryPicker } from "../components/SuggestionForm";
 import { ErrorFallback } from "../components/ErrorFallback";
 import { useZero } from "../context/ZeroContext";
 import { cn } from "../utils/cn";
 import { useUser } from "../hooks/useUser";
+import { useActiveSessions } from "../hooks/useSession";
 import { randID } from "../rand";
 
 export function HomePageSkeleton() {
@@ -22,11 +20,20 @@ export function HomePageSkeleton() {
 	);
 }
 
-export function HomePage() {
+function HomePage() {
 	const z = useZero();
 	const { displayName, userId } = useUser();
 	const navigate = useNavigate();
 	const [isCreatingSession, setIsCreatingSession] = createSignal(false);
+	
+	// Get active session using the hook
+	const [activeSessions] = useActiveSessions();
+	
+	// Get the most recent active session (first one in the sorted results)
+	const activeSession = createMemo(() => {
+		const sessions = activeSessions();
+		return sessions && sessions.length > 0 ? sessions[0] : null;
+	});
 
 	if (!z || !userId) return <HomePageSkeleton />;
 
@@ -34,7 +41,7 @@ export function HomePage() {
 		setIsCreatingSession(true);
 		try {
 			const sessionId = randID();
-			await z.mutate.session.insert({
+			await z.mutate.sessions.insert({
 				id: sessionId,
 				startedBy: userId,
 				users: [userId],
@@ -89,17 +96,29 @@ export function HomePage() {
 								team.
 							</p>
 							<div class="card-actions flex flex-col gap-4">
-								<button
-									type="button"
-									onClick={createNewSession}
-									disabled={isCreatingSession()}
-									class={cn(
-										"btn btn-primary w-full",
-										isCreatingSession() && "loading",
-									)}
+								<Show
+									when={activeSession()}
+									fallback={
+										<button
+											type="button"
+											onClick={createNewSession}
+											disabled={isCreatingSession()}
+											class={cn(
+												"btn btn-primary w-full",
+												isCreatingSession() && "loading",
+											)}
+										>
+											{isCreatingSession() ? "Creating..." : "Create New Session"}
+										</button>
+									}
 								>
-									{isCreatingSession() ? "Creating..." : "Create New Session"}
-								</button>
+									<A 
+										href={`/sessions/${activeSession()?.id}`} 
+										class="btn btn-primary w-full"
+									>
+										Join Active Session
+									</A>
+								</Show>
 								<A href="/feedback" class="btn btn-outline w-full">
 									View Feedback Board
 								</A>
@@ -111,3 +130,5 @@ export function HomePage() {
 		</div>
 	);
 }
+
+export default HomePage;

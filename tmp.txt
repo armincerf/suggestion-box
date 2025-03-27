@@ -1,0 +1,107 @@
+> Running zero-deploy-permissions.
+Loading permissions from src/zero-schema.ts
+Connecting to upstream@localhost:5469
+Validating permissions against tables and columns published for "zero".
+Deploying permissions for --app-id "zero" to upstream@localhost
+Permissions unchanged (hash=3fea820)
+> zero-deploy-permissions completed successfully.
+> Running zero-cache at
+
+	http://localhost:4848
+
+worker=main pid=58317 
+worker=main pid=58317 starting server protocolVersion=7, taskID=iOlLKyJuG7AF_wS5WKX3t
+worker=main pid=58317 waiting for zero-cache to be ready ...
+worker=dispatcher pid=58339 
+worker=dispatcher pid=58339 initSchema=zero_0/cvr Checking schema for compatibility with view-syncer at schema v9
+worker=dispatcher pid=58339 initSchema=zero_0/cvr Running view-syncer at schema v9
+worker=change-streamer pid=58342 
+worker=change-streamer pid=58342 initSchema=fe6o4rxw9g Checking schema for compatibility with replica-zero-0 at schema v5
+worker=change-streamer pid=58342 initSchema=fe6o4rxw9g Running replica-zero-0 at schema v5 (3 ms)
+worker=change-streamer pid=58342 initSchema=zero_0 Checking schema for compatibility with upstream-shard-zero at schema v6
+worker=change-streamer pid=58342 initSchema=zero_0 Running upstream-shard-zero at schema v6
+worker=change-streamer pid=58342 initSchema=zero_0/cdc Checking schema for compatibility with change-streamer at schema v4
+worker=change-streamer pid=58342 initSchema=zero_0/cdc Running change-streamer at schema v4
+worker=change-streamer pid=58342 component=change-streamer awaiting first serving subscriber
+worker=dispatcher pid=58339 waiting for workers to be ready ...
+worker=change-streamer pid=58342 component=change-streamer-http-server change-streamer-http-server listening at http://[::]:4849
+worker=serving-replicator pid=58355 
+worker=serving-replicator pid=58355 setting up serving replica
+worker=serving-replicator pid=58355 initSchema=1j1ythvs3zq Checking schema for compatibility with serving-replica at schema v5
+worker=serving-replicator pid=58355 initSchema=1j1ythvs3zq Running serving-replica at schema v5 (0 ms)
+worker=serving-replicator pid=58355 Size of db /tmp/zstart_solid_replica.db: 0.26 MB (0.00 MB freeable)
+worker=serving-replicator pid=58355 setting /tmp/zstart_solid_replica.db to wal2 mode
+worker=serving-replicator pid=58355 optimized /tmp/zstart_solid_replica.db
+worker=serving-replicator pid=58355 component=replicator serviceID=serving-replicator-58355 Starting IncrementalSyncer
+worker=serving-replicator pid=58355 connecting to change-streamer@ws://localhost:4849/replication/v0/changes
+worker=change-streamer pid=58342 component=change-streamer starting change stream
+worker=serving-replicator pid=58355 connected
+file:///Users/alexdavis/ghq/github.com/armincerf/suggestion-box/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js:4
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
+         ^^^^^^^^^^^^^^^^^
+SyntaxError: Named export 'ATTR_SERVICE_NAME' not found. The requested module '@opentelemetry/semantic-conventions' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '@opentelemetry/semantic-conventions';
+const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } = pkg;
+
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:180:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:263:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.14.0
+worker=change-streamer pid=58342 caught up iOlLKyJuG7AF_wS5WKX3t/serving-replicator-58355 with 0 changes (1 ms)
+file:///Users/alexdavis/ghq/github.com/armincerf/suggestion-box/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js:4
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
+         ^^^^^^^^^^^^^^^^^
+SyntaxError: Named export 'ATTR_SERVICE_NAME' not found. The requested module '@opentelemetry/semantic-conventions' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '@opentelemetry/semantic-conventions';
+const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } = pkg;
+
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:180:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:263:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.14.0
+file:///Users/alexdavis/ghq/github.com/armincerf/suggestion-box/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js:4
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
+         ^^^^^^^^^^^^^^^^^
+SyntaxError: Named export 'ATTR_SERVICE_NAME' not found. The requested module '@opentelemetry/semantic-conventions' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '@opentelemetry/semantic-conventions';
+const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } = pkg;
+
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:180:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:263:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.14.0
+worker=dispatcher pid=58339 component=process-manager syncer.ts (1) (58356) exited with code (1) 
+worker=dispatcher pid=58339 component=process-manager exiting with code 1
+worker=dispatcher pid=58339 component=process-manager stopping process-manager 
+worker=change-streamer pid=58342 stopping ChangeStreamerImpl change-streamer (SIGQUIT)
+worker=serving-replicator pid=58355 stopping ReplicatorService serving-replicator-58355 (SIGQUIT)
+worker=change-streamer pid=58342 component=change-streamer stopping change-streamer 
+worker=serving-replicator pid=58355 component=replicator serviceID=serving-replicator-58355 stopping IncrementalSyncer 
+worker=change-streamer pid=58342 stopping ChangeStreamerHttpServer change-streamer-http-server (SIGQUIT)
+worker=change-streamer pid=58342 component=change-streamer-http-server change-streamer-http-server: no longer accepting connections
+worker=serving-replicator pid=58355 component=replicator serviceID=serving-replicator-58355 IncrementalSyncer stopped
+worker=serving-replicator pid=58355 ReplicatorService (serving-replicator-58355) stopped
+pid 58355 exiting normally
+worker=change-streamer pid=58342 storer stopped
+worker=main pid=58317 component=process-manager  (58339) exited with code (1) 
+worker=main pid=58317 component=process-manager all user-facing workers exited
+worker=main pid=58317 component=process-manager exiting with code 0
+worker=main pid=58317 component=process-manager stopping process-manager 
+worker=change-streamer pid=58342 component=change-source starting replication stream@zero_0
+worker=change-streamer pid=58342 component=change-streamer-http-server stopping change-streamer-http-server 
+worker=change-streamer pid=58342 ChangeStreamerHttpServer (change-streamer-http-server) stopped
+pid 58342 exiting normally
+> zero-cache exited. Exiting.
+error: "zero-cache-dev" exited with code 255

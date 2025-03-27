@@ -11,9 +11,10 @@ export function useCommentReplies(props: {
 	const z = useZero();
 
 	const [replies] = useQuery(() => {
-		const baseQuery = z.query.comment
-			.where("parentCommentID", props.commentId)
-			.orderBy("timestamp", "asc");
+		const baseQuery = z.query.comments
+			.where("parentCommentId", props.commentId)
+			.orderBy("timestamp", "asc")
+			.related("reactions");
 
 		return props.limit ? baseQuery.limit(props.limit) : baseQuery;
 	}, { ttl: "forever" });

@@ -1,4 +1,4 @@
-import type { Comment } from "../schema";
+import type { Comment } from "../zero-schema";
 import { CommentItem } from "./CommentItem";
 import { splitProps } from "solid-js";
 

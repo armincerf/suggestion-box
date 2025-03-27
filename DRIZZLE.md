@@ -27,9 +27,7 @@ The following scripts are available in `package.json`:
 - `db:push` - Push schema changes directly to the database
 - `db:seed` - Run the database seeding script with comprehensive sample data
 - `db:studio` - Launch Drizzle Studio to view and edit data
-- `db:test` - Run tests to verify Drizzle ORM connectivity and basic functionality
-- `db:test:comments` - Test nested comments functionality and relationship handling
-- `db:reset-and-seed` - Reset and seed the database in one command
+- `db:seed` - Reset and seed the database in one command
 
 ## Database Schema
 

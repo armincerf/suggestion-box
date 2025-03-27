@@ -25,6 +25,18 @@ export const schema = createZeroSchema(drizzleSchema, {
 			displayName: true,
 			categoryId: true,
 			updatedAt: true,
+			deletedAt: true,
+			actionItems: true,
+		},
+		actionItems: {
+			id: true,
+			suggestionId: true,
+			body: true,
+			completed: true,
+			completedAt: true,
+			assignedTo: true,
+			createdAt: true,
+			updatedAt: true,
 		},
 		comments: {
 			id: true,
@@ -71,28 +83,8 @@ type AuthData = {
 };
 
 export type Schema = typeof schema;
-export type Category = Row<typeof schema.tables.categories>;
-export type Suggestion = Row<typeof schema.tables.suggestions>;
-export type Comment = Row<typeof schema.tables.comments>;
-export type Reaction = Row<typeof schema.tables.reactions>;
-export type User = Row<typeof schema.tables.users>;
-export type Session = Row<typeof schema.tables.sessions>;
-
-// Check the schema field names after converter creates them
-type SuggestionFields = keyof Suggestion;
-type CommentFields = keyof Comment;
-type ReactionFields = keyof Reaction;
-type UserFields = keyof User;
 
 export const permissions = definePermissions<AuthData, Schema>(schema, () => {
-	// Allow users to only edit their own suggestions
-	const allowIfSuggestionCreator = (
-		authData: AuthData,
-		{ cmp }: ExpressionBuilder<Schema, "suggestions">,
-	) => {
-		return cmp("userId", authData.sub ?? "");
-	};
-
 	// Allow users to only delete their own comments
 	const allowIfCommentCreator = (
 		authData: AuthData,
@@ -123,10 +115,21 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
 				update: {
-					preMutation: [allowIfSuggestionCreator],
-					postMutation: [allowIfSuggestionCreator],
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
 				},
 				// No delete permission for suggestions
+			},
+		},
+		actionItems: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+				update: {
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
+				},
+				delete: ANYONE_CAN,
 			},
 		},
 		comments: {
@@ -140,6 +143,10 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
+				update: {
+					preMutation: [allowIfReactionCreator],
+					postMutation: [allowIfReactionCreator],
+				},
 				delete: [allowIfReactionCreator], // Only allow deleting own reactions
 			},
 		},
@@ -164,8 +171,26 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
-				// No update or delete permissions for sessions
+				update: {
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
+				},
 			},
 		},
 	} satisfies PermissionsConfig<AuthData, Schema>;
 });
+
+export type Category = Row<typeof schema.tables.categories>;
+export type Suggestion = Row<typeof schema.tables.suggestions> & {
+	comments: Readonly<Row<typeof schema.tables.comments>[]>;
+	reactions: Readonly<Row<typeof schema.tables.reactions>[]>;
+};
+export type Comment = Row<typeof schema.tables.comments> & {
+	reactions?: Readonly<Row<typeof schema.tables.reactions>[]>;
+};
+export type Reaction = Row<typeof schema.tables.reactions>;
+export type User = Row<typeof schema.tables.users>;
+export type Session = Row<typeof schema.tables.sessions>;
+export type ActionItem = Row<typeof schema.tables.actionItems> & {
+	assignedTo: Readonly<Row<typeof schema.tables.users>>;
+};

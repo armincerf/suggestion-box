@@ -2,9 +2,12 @@ import { ErrorBoundary, Suspense } from "solid-js";
 import { ErrorFallback } from "./ErrorFallback";
 import { COMMON_EMOJIS } from "../utils/constants";
 import { Index } from "solid-js";
-import type { Suggestion, Comment } from "../schema";
-import { randID } from "../rand";
+import type { Suggestion, Comment } from "../zero-schema";
 import { useZero } from "../context/ZeroContext";
+
+export function generateReactionId(entityId: string, userId: string) {
+	return `${entityId}-${userId}`;
+}
 
 function ReactionButton(props: {
 	emoji: string;
@@ -41,34 +44,29 @@ export function ReactionButtons(props: {
 	const entity = () => props.entity;
 	const toggleReaction = async (emoji: string) => {
 		const existingReactionId = entity().reactions?.find(
-			(r) => r.emoji === emoji && r.userId === z.userID,
+			(r) =>
+				r.id === generateReactionId(entity().id, z.userID) && r.emoji === emoji,
 		)?.id;
 
 		try {
 			if (existingReactionId) {
-				await z.mutate.reaction.delete({ id: existingReactionId });
+				await z.mutate.reactions.delete({ id: existingReactionId });
 			} else {
-				// Type guard to check if entity is a Comment
-				const isComment = (obj: Suggestion | Comment): obj is Comment =>
-					"suggestionID" in obj;
-
-				if (isComment(entity())) {
-					// It's a comment
-					await z.mutate.reaction.insert({
-						id: randID(),
-						emoji,
-						userId: z.userID,
-						timestamp: Date.now(),
-						commentID: entity().id,
+				const baseReaction = {
+					id: generateReactionId(entity().id, z.userID),
+					emoji,
+					userId: z.userID,
+					timestamp: Date.now(),
+				} as const;
+				if ("isRootComment" in entity()) {
+					await z.mutate.reactions.upsert({
+						...baseReaction,
+						commentId: entity().id,
 					});
 				} else {
-					// It's a suggestion
-					await z.mutate.reaction.insert({
-						id: randID(),
-						emoji,
-						userId: z.userID,
-						timestamp: Date.now(),
-						suggestionID: entity().id,
+					await z.mutate.reactions.upsert({
+						...baseReaction,
+						suggestionId: entity().id,
 					});
 				}
 			}

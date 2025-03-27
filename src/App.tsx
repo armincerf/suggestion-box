@@ -14,11 +14,7 @@ function preloadOtherPages() {
 const routes = [
 	{
 		path: "/",
-		component: lazy(() =>
-			import("./pages/HomePage").then((module) => ({
-				default: module.HomePage,
-			})),
-		),
+		component: lazy(() => import("./pages/HomePage")),
 	},
 	{
 		path: "/feedback",

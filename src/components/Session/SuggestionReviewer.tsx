@@ -1,104 +1,104 @@
-import { createSignal, Show, Index } from "solid-js";
-import type { Suggestion } from "../../schema";
+import { createSignal, Show, Index, type Accessor } from "solid-js";
+import type { Suggestion, User, Category } from "../../zero-schema";
 import { SuggestionItem } from "../SuggestionItem";
 import { useUser } from "../../hooks/useUser";
-import { ChevronLeft, ChevronRight } from "lucide-solid";
+import { Trash2Icon } from "lucide-solid";
+import { useZero } from "../../context/ZeroContext";
+import { useQuery } from "@rocicorp/zero/solid";
+import { SelectUser } from "../UserAvatar";
+import { randID } from "../../rand";
+import { useCategories } from "../../hooks/useCategories";
+import { cn } from "../../utils/cn";
+import { darkenHexString } from "../../utils/colorUtils";
 
 interface SuggestionReviewerProps {
-	suggestions: Suggestion[];
-	onComplete: () => void;
+	currentSuggestion: Accessor<Suggestion | undefined>;
 	isSessionLeader: boolean;
 	isSessionEnded: boolean;
+	users: User[];
 }
 
 export function SuggestionReviewer(props: SuggestionReviewerProps) {
 	const { userId, displayName } = useUser();
-	const [currentIndex, setCurrentIndex] = createSignal(0);
-	const [actionItems, setActionItems] = createSignal<Record<string, string[]>>(
-		{},
-	);
+	const z = useZero();
+	const [categories] = useCategories();
 
-	// Safely access suggestions with null checks
-	const safeSuggestions = () => props.suggestions || [];
-
-	// Current suggestion being reviewed (with null check)
-	const currentSuggestion = () => {
-		const suggestions = safeSuggestions();
-		return suggestions.length > currentIndex()
-			? suggestions[currentIndex()]
-			: null;
+	// Get the current suggestion's category
+	const currentCategory = () => {
+		const suggestion = props.currentSuggestion();
+		if (!suggestion) return undefined;
+		return categories().find((cat) => cat.id === suggestion.categoryId);
 	};
 
 	// Add action item to the current suggestion
-	const addActionItem = (suggestionId: string, text: string) => {
+	const addActionItem = (
+		suggestionId: string,
+		text: string,
+		assignedTo?: string,
+	) => {
 		if (!text.trim()) return;
 
-		setActionItems((prev) => {
-			const items = prev[suggestionId] || [];
-			return {
-				...prev,
-				[suggestionId]: [...items, text.trim()],
-			};
+		z.mutate.actionItems.insert({
+			id: suggestionId + randID(),
+			suggestionId: suggestionId,
+			assignedTo: assignedTo,
+			body: text.trim(),
+			completed: false,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
 		});
 	};
 
 	// Remove action item from the current suggestion
-	const removeActionItem = (suggestionId: string, index: number) => {
-		setActionItems((prev) => {
-			const items = [...(prev[suggestionId] || [])];
-			items.splice(index, 1);
-			return {
-				...prev,
-				[suggestionId]: items,
-			};
+	const removeActionItem = (actionItemId: string) => {
+		z.mutate.actionItems.delete({
+			id: actionItemId,
 		});
 	};
+	const [actionItems] = useQuery(() =>
+		z.query.actionItems.orderBy("createdAt", "desc").related("assignedTo"),
+	);
 
-	// Navigate to the next suggestion
-	const nextSuggestion = () => {
-		if (currentIndex() < safeSuggestions().length - 1) {
-			setCurrentIndex(currentIndex() + 1);
-		} else {
-			// If this is the last suggestion, complete the review
-			props.onComplete();
-		}
-	};
-
-	// Navigate to the previous suggestion
-	const previousSuggestion = () => {
-		if (currentIndex() > 0) {
-			setCurrentIndex(currentIndex() - 1);
-		}
-	};
-
-	// Check if there are more suggestions to review
-	const hasMoreSuggestions = () =>
-		currentIndex() < safeSuggestions().length - 1;
-
-	// Check if this is the first suggestion
-	const isFirstSuggestion = () => currentIndex() === 0;
-
-	// Check if there are any action items for a suggestion
 	const hasSuggestionActionItems = (suggestionId: string | undefined) => {
 		if (!suggestionId) return false;
-		return (actionItems()[suggestionId] || []).length > 0;
+		return actionItems().length > 0;
 	};
 
 	// Get action items for a suggestion
 	const getSuggestionActionItems = (suggestionId: string | undefined) => {
 		if (!suggestionId) return [];
-		return actionItems()[suggestionId] || [];
+		return actionItems().filter((item) => item.suggestionId === suggestionId);
 	};
+	const currentSuggestion = () => props.currentSuggestion();
+	const [actionItemText, setActionItemText] = createSignal("");
+	const [actionItemAssignedTo, setActionItemAssignedTo] = createSignal<
+		string | undefined
+	>(undefined);
 
 	return (
 		<div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
 			<div class="bg-indigo-600 dark:bg-indigo-800 p-6 text-white">
 				<h1 class="text-3xl font-bold mb-2">Review Suggestions</h1>
 				<p class="opacity-90">
-					Review suggestions submitted since the last session (
-					{currentIndex() + 1} of {safeSuggestions().length})
+					Review suggestions submitted since the last session
 				</p>
 			</div>
+			<Show when={currentCategory()}>
+				{(category) => (
+					<div
+						class={cn(
+							"ml-7 mt-6 inline-flex items-center px-3 py-1 rounded-md text-sm font-medium",
+							"border border-opacity-30 border-white",
+						)}
+						style={{
+							"background-color": category().backgroundColor,
+							color: darkenHexString(category().backgroundColor, 200),
+						}}
+					>
+						{category().name} - {category().description}
+					</div>
+				)}
+			</Show>
 
 			<div class="p-6 dark:text-white">
 				<div class="mb-8">
@@ -110,44 +110,54 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 							</div>
 						}
 					>
-						<SuggestionItem
-							suggestion={currentSuggestion() as Suggestion}
-							userId={userId}
-							displayName={displayName()}
-							readOnly={props.isSessionEnded}
-						/>
+						{(suggestion) => (
+							<SuggestionItem
+								suggestion={suggestion()}
+								userId={userId}
+								displayName={displayName()}
+								readOnly={props.isSessionEnded}
+							/>
+						)}
 					</Show>
 				</div>
 
 				{/* Action Items Section */}
-				<Show when={currentSuggestion()}>
+				<Show when={props.currentSuggestion()}>
 					<div class="border-t dark:border-gray-700 pt-6 mb-8">
 						<h2 class="text-xl font-semibold mb-4">Action Items</h2>
 
 						<div class="space-y-4">
 							{/* Action item list */}
 							<Show
-								when={hasSuggestionActionItems(currentSuggestion()?.id)}
+								when={hasSuggestionActionItems(props.currentSuggestion()?.id)}
 								fallback={
 									<p class="text-gray-500 dark:text-gray-400">
-										No action items yet. Add some below.
+										No action items yet. Add some below and assign to a user.
 									</p>
 								}
 							>
 								<ul class="space-y-2">
 									<Index
-										each={getSuggestionActionItems(currentSuggestion()?.id)}
+										each={getSuggestionActionItems(
+											props.currentSuggestion()?.id,
+										)}
 									>
-										{(item, index) => (
+										{(item) => (
 											<li class="flex items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
-												<span class="flex-grow dark:text-gray-200">
-													{item()}
+												<span class="flex-grow dark:text-gray-200 flex justify-between gap-2 pr-4">
+													<span class="text-sm text-gray-500 dark:text-gray-400">
+														{item().body}
+													</span>
+													<Show when={item().assignedTo}>
+														<span class="text-sm text-gray-500 dark:text-gray-400">
+															Assigned to {item().assignedTo.displayName}
+														</span>
+													</Show>
 												</span>
 												<button
 													type="button"
 													onClick={() => {
-														const id = currentSuggestion()?.id;
-														if (id) removeActionItem(id, index);
+														removeActionItem(item().id);
 													}}
 													class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
 													disabled={props.isSessionEnded}
@@ -162,24 +172,34 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 
 							{/* Add action item form */}
 							<Show when={!props.isSessionEnded}>
-								<div class="flex gap-2">
-									<input
-										type="text"
+								<div class="flex flex-col gap-2">
+									<textarea
 										id="new-action-item"
-										class="flex-grow input input-bordered dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-										placeholder="Add a new action item..."
+										class="w-full textarea shadow-sm"
+										placeholder="Action item..."
+										value={actionItemText()}
+										onChange={(e) => setActionItemText(e.target.value)}
 										onKeyDown={(e) => {
 											if (e.key === "Enter") {
-												const id = currentSuggestion()?.id;
+												const id = props.currentSuggestion()?.id;
 												if (id) {
 													addActionItem(
 														id,
 														(e.target as HTMLInputElement).value,
+														actionItemAssignedTo() ?? undefined,
 													);
 													(e.target as HTMLInputElement).value = "";
 												}
 											}
 										}}
+									/>
+									<SelectUser
+										userIds={props.users.map((user) => user.id)}
+										selectedUserId={actionItemAssignedTo() ?? undefined}
+										setSelectedUserId={(userId) => {
+											setActionItemAssignedTo(userId);
+										}}
+										disabled={actionItemText().trim() === ""}
 									/>
 									<button
 										type="button"
@@ -188,9 +208,9 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 											const input = document.getElementById(
 												"new-action-item",
 											) as HTMLInputElement;
-											const id = currentSuggestion()?.id;
+											const id = props.currentSuggestion()?.id;
 											if (input && id) {
-												addActionItem(id, input.value);
+												addActionItem(id, input.value, actionItemAssignedTo());
 												input.value = "";
 											}
 										}}
@@ -203,29 +223,36 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 					</div>
 				</Show>
 
-				{/* Navigation buttons */}
 				<div class="flex justify-between border-t dark:border-gray-700 pt-6">
 					<button
 						type="button"
-						onClick={previousSuggestion}
+						onClick={() => {
+							z.mutate.suggestions.update({
+								id: props.currentSuggestion()?.id,
+								deletedAt: Date.now(),
+							});
+						}}
 						class="btn btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-						disabled={isFirstSuggestion()}
+						disabled={false}
 					>
-						<ChevronLeft class="w-5 h-5 mr-1" /> Previous
+						<Trash2Icon class="w-5 h-5" /> Delete
 					</button>
 
 					<button
 						type="button"
-						onClick={nextSuggestion}
+						onClick={() => {
+							const suggestionId = props.currentSuggestion()?.id;
+							console.log("suggestionId", suggestionId);
+							if (!suggestionId) return;
+							console.log("updating suggestion");
+							z.mutate.suggestions.update({
+								id: suggestionId,
+								updatedAt: Date.now(),
+							});
+						}}
 						class="btn btn-primary"
 					>
-						{hasMoreSuggestions() ? (
-							<>
-								Next <ChevronRight class="w-5 h-5 ml-1" />
-							</>
-						) : (
-							"Complete Review"
-						)}
+						Save
 					</button>
 				</div>
 			</div>

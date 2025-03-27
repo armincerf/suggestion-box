@@ -1,5 +1,4 @@
 import { relations } from "drizzle-orm";
-import type { InferSelectModel } from "drizzle-orm";
 import {
 	pgTable,
 	text,
@@ -27,6 +26,22 @@ export const suggestions = pgTable("suggestion", {
 	categoryId: text("category_id")
 		.notNull()
 		.references(() => categories.id, { onDelete: "cascade" }),
+	updatedAt: timestamp("updated_at", { withTimezone: true }),
+	deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+export const actionItems = pgTable("action_item", {
+	id: text("id").primaryKey(),
+	suggestionId: text("suggestion_id")
+		.notNull()
+		.references(() => suggestions.id, { onDelete: "cascade" }),
+	body: text("body").notNull(),
+	completed: boolean("completed").notNull().default(false),
+	completedAt: timestamp("completed_at", { withTimezone: true }),
+	assignedTo: text("assigned_to").references(() => users.id, {
+		onDelete: "cascade",
+	}),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
@@ -87,6 +102,17 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
 	suggestions: many(suggestions),
 }));
 
+export const actionItemsRelations = relations(actionItems, ({ one }) => ({
+	suggestion: one(suggestions, {
+		fields: [actionItems.suggestionId],
+		references: [suggestions.id],
+	}),
+	assignedTo: one(users, {
+		fields: [actionItems.assignedTo],
+		references: [users.id],
+	}),
+}));
+
 export const suggestionsRelations = relations(suggestions, ({ one, many }) => ({
 	category: one(categories, {
 		fields: [suggestions.categoryId],
@@ -94,6 +120,7 @@ export const suggestionsRelations = relations(suggestions, ({ one, many }) => ({
 	}),
 	comments: many(comments),
 	reactions: many(reactions, { relationName: "suggestionReactions" }),
+	actionItems: many(actionItems),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -135,10 +162,3 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 		references: [users.id],
 	}),
 }));
-
-export type Category = InferSelectModel<typeof categories>;
-export type Suggestion = InferSelectModel<typeof suggestions>;
-export type Comment = InferSelectModel<typeof comments>;
-export type Reaction = InferSelectModel<typeof reactions>;
-export type User = InferSelectModel<typeof users>;
-export type Session = InferSelectModel<typeof sessions>;

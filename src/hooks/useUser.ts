@@ -3,10 +3,10 @@ import { useZero } from "../context/ZeroContext";
 import { getNameFromUserId } from "../nameGenerator";
 import { createMemo } from "solid-js";
 import type { Zero } from "@rocicorp/zero";
-import type { Schema } from "../schema";
+import type { Schema } from "../zero-schema";
 
 export const userQuery = (z: Zero<Schema>) =>
-	z.query.user.where("id", "=", z.userID).one();
+	z.query.users.where("id", z.userID).one();
 
 export function useUser() {
 	const z = useZero();

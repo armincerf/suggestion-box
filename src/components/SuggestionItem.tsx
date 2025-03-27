@@ -1,6 +1,6 @@
 import { createSignal, Show, createMemo, Suspense } from "solid-js";
 import { ErrorBoundary } from "solid-js";
-import type { Suggestion } from "../schema";
+import type { Suggestion } from "../zero-schema";
 import { getNameFromUserId } from "../nameGenerator";
 import CommentForm from "./CommentForm";
 import { NestedComment } from "./NestedComment";
@@ -85,16 +85,16 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const handleAddComment = async (text: string) => {
 		try {
 			const sel = selectedText();
-			await z.mutate.comment.insert({
+			await z.mutate.comments.insert({
 				id: randID(),
 				body: text,
-				suggestionID: suggestion().id,
+				suggestionId: suggestion().id,
 				selectionStart: sel?.start,
 				selectionEnd: sel?.end,
 				timestamp: Date.now(),
 				userId: z.userID,
 				displayName: displayName(),
-				parentCommentID: null, // Top-level comments have no parent
+				parentCommentId: null, // Top-level comments have no parent
 				isRootComment: true, // Mark as root comment
 			});
 
@@ -114,10 +114,10 @@ export function SuggestionItem(props: SuggestionItemProps) {
 
 		setIsSubmittingEdit(true);
 		try {
-			await z.mutate.suggestion.update({
+			await z.mutate.suggestions.update({
 				id: suggestion().id,
 				body: editedBody().trim(),
-				categoryID: suggestion().categoryID, // Keep the same category
+				categoryId: suggestion().categoryId, // Keep the same category
 			});
 			setIsEditing(false);
 		} catch (error) {

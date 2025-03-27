@@ -1,9 +1,8 @@
 import { randID } from "../rand";
 import { useZero } from "../context/ZeroContext";
 import { BaseForm } from "./BaseForm";
-import { createSignal, For, Index } from "solid-js";
+import { createSignal, For } from "solid-js";
 import { useCategories } from "../hooks/useCategories";
-import type { Category } from "../schema";
 
 interface SuggestionFormProps {
 	displayName: string;
@@ -29,13 +28,13 @@ export function SuggestionForm(props: SuggestionFormProps) {
 		if (!text.trim() || !z) return;
 
 		try {
-			await z.mutate.suggestion.insert({
+			await z.mutate.suggestions.insert({
 				id: randID(),
 				body: text.trim(),
 				timestamp: Date.now(),
 				userId: z.userID,
 				displayName: displayName(),
-				categoryID: selectedCategory(),
+				categoryId: selectedCategory(),
 				updatedAt: Date.now(),
 			});
 

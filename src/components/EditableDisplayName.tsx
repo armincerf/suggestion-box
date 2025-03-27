@@ -20,10 +20,11 @@ export function EditableDisplayName(props: EditableDisplayNameProps) {
     if (newName && newName !== props.displayName) {
       setIsSubmitting(true);
       try {
-        await z.mutate.user.update({
+        await z.mutate.users.update({
           id: z.userID,
           displayName: newName,
         });
+        localStorage.setItem("username", newName);
         console.log("User name saved:", newName);
         if (props.onSave) {
           props.onSave(newName);

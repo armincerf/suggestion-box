@@ -20,7 +20,11 @@ interface CommentFormProps {
 export function CommentForm(props: CommentFormProps) {
 	const z = useZero();
 	const [parentComment] = useQuery(
-		() => z.query.comment.where("id", props.parentCommentId || "").one(),
+		() =>
+			z.query.comments
+				.where("id", props.parentCommentId || "")
+				.one()
+				.related("reactions"),
 		{ ttl: "forever" },
 	);
 

@@ -3,15 +3,19 @@ import { render } from "solid-js/web";
 import { createSignal, onMount } from "solid-js";
 import App from "./App";
 import "./index.css";
-import { schema } from "./schema";
+import { schema, type Schema as AppSchema } from "./zero-schema";
 import { createZero } from "@rocicorp/zero/solid";
 import type { Zero } from "@rocicorp/zero";
-import type { Schema as AppSchema } from "./schema";
 import { randID } from "./rand";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ZeroProvider } from "./context/ZeroContext";
 import { getNameFromUserId } from "./nameGenerator";
 import { cssColorNames } from "./utils/constants";
+import { logger, attachToErrorBoundary } from "../hyperdx-logger";
+import { ErrorBoundary } from "solid-js";
+
+// Attach SolidJS ErrorBoundary to HyperDX
+attachToErrorBoundary(ErrorBoundary);
 
 function must<T>(val: T) {
 	if (!val) {
@@ -73,7 +77,7 @@ async function createJWT(
 function decodeJWT(token: string) {
 	const [, payload] = token.split(".");
 	const decodedPayload = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-	return JSON.parse(decodedPayload);
+	return JSON.parse(decodedPayload) as { sub: string };
 }
 
 function AppLoader() {
@@ -85,7 +89,6 @@ function AppLoader() {
 	onMount(async () => {
 		try {
 			let encodedJWT = localStorage.getItem("jwt");
-			const userExisted = !!encodedJWT;
 
 			if (!encodedJWT) {
 				const randomId = randID();
@@ -99,7 +102,10 @@ function AppLoader() {
 			}
 
 			const decodedJWT = encodedJWT && decodeJWT(encodedJWT);
-			const userID = decodedJWT?.sub ? decodedJWT.sub : "anon";
+			const userID =
+				typeof decodedJWT === "object" && "sub" in decodedJWT
+					? decodedJWT.sub
+					: "anon";
 			localStorage.setItem("userId", userID);
 
 			const z = createZero({
@@ -109,23 +115,49 @@ function AppLoader() {
 				schema,
 				kvStore: "idb",
 			});
+			z.query.users.preload();
+			z.query.sessions.preload();
+			z.query.suggestions.preload();
+			z.query.comments.preload();
+			z.query.reactions.preload();
+			z.query.categories.preload();
 
-			if (!userExisted) {
-				// css color names
-				z.mutate.user.insert({
-					id: userID,
-					displayName: getNameFromUserId(userID),
-					avatarUrl: `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`,
-					color:
-						cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
-					createdAt: Date.now(),
-					updatedAt: Date.now(),
+			setTimeout(async () => {
+				const user = await z.query.users.where("id", userID).one().run();
+				logger.info("User data loaded", { user, userId: userID });
+				const avatarUrl = `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`;
+
+				if (!user) {
+					z.mutate.users.insert({
+						id: userID,
+						displayName: getNameFromUserId(userID),
+						avatarUrl,
+						color:
+							cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
+						createdAt: Date.now(),
+						updatedAt: Date.now(),
+					});
+					const newUser = await z.query.users.where("id", userID).one().run();
+
+					logger.info("Created new user", { userId: userID, user: newUser });
+				}
+				const userName = user?.displayName || getNameFromUserId(userID);
+
+				// Set user info for HyperDX
+				logger.setUserInfo({
+					userId: userID,
+					userName,
 				});
-			}
+				localStorage.setItem("username", userName);
+				localStorage.setItem("useravatar", user?.avatarUrl || avatarUrl);
+			}, 300);
 
 			setZeroInstance(z);
 		} catch (error) {
-			console.error("Failed to initialize app:", error);
+			logger.error(
+				"Failed to initialize app",
+				error instanceof Error ? error : new Error(String(error)),
+			);
 		} finally {
 			setIsLoading(false);
 		}

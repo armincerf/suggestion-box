@@ -1,6 +1,6 @@
 import { createContext, useContext, type ParentProps } from "solid-js";
 import type { Zero } from "@rocicorp/zero";
-import type { Schema } from "../schema";
+import type { Schema } from "../zero-schema";
 import type { CustomMutatorDefs } from "@rocicorp/zero";
 
 const ZeroContext = createContext<

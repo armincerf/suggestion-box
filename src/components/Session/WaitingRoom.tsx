@@ -1,14 +1,17 @@
-import { createMemo, createSignal, For } from "solid-js";
-import type { User } from "../../schema";
+import { createMemo, createSignal, Show, For } from "solid-js";
+import type { User } from "../../zero-schema";
 import { AvatarEditorModal } from "../AvatarEditor/AvatarEditorModal";
 import { useZero } from "../../context/ZeroContext";
 import { useUser } from "../../hooks/useUser";
+import { startSession } from "../../hooks/useSession";
+import { ErrorFallback } from "../ErrorFallback";
+import { SuggestionFormWithCategoryPicker } from "../SuggestionForm";
+import { EditableDisplayName } from "../EditableDisplayName";
 
 interface WaitingRoomProps {
 	sessionId: string;
 	users: User[];
 	isSessionLeader: boolean;
-	onStartSession: () => void;
 }
 
 export function WaitingRoom(props: WaitingRoomProps) {
@@ -24,7 +27,7 @@ export function WaitingRoom(props: WaitingRoomProps) {
 		if (!z || !userId) return;
 
 		try {
-			await z.mutate.user.update({
+			await z.mutate.users.update({
 				id: userId,
 				avatarUrl: newAvatarUrl,
 			});
@@ -32,6 +35,10 @@ export function WaitingRoom(props: WaitingRoomProps) {
 		} catch (error) {
 			console.error("Error updating avatar:", error);
 		}
+	};
+	const handleStartSession = async () => {
+		if (!z || !userId || !props.isSessionLeader) return;
+		await startSession(z, props.sessionId, userId);
 	};
 
 	const copyToClipboard = () => {
@@ -117,7 +124,7 @@ export function WaitingRoom(props: WaitingRoomProps) {
 							/>
 						</div>
 						<div class="flex-grow">
-							<p class="font-medium text-lg">{displayName()}</p>
+							<EditableDisplayName displayName={displayName()} />
 							<button
 								type="button"
 								onClick={() => setShowAvatarEditor(true)}
@@ -129,12 +136,21 @@ export function WaitingRoom(props: WaitingRoomProps) {
 					</div>
 				</div>
 
+				<div class="card bg-base-100 shadow-xl">
+					<div class="card-body">
+						<h2 class="card-title mb-4">Submit Feedback</h2>
+						<Show when={z}>
+							<SuggestionFormWithCategoryPicker displayName={displayName()} />
+						</Show>
+					</div>
+				</div>
+
 				{/* Start session button (session leader only) */}
 				{props.isSessionLeader && (
 					<div class="flex justify-center pt-4 border-t dark:border-gray-700">
 						<button
 							type="button"
-							onClick={props.onStartSession}
+							onClick={handleStartSession}
 							class="btn btn-primary btn-lg"
 						>
 							Start Session

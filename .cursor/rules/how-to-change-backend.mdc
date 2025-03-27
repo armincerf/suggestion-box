@@ -3,4 +3,4 @@ description: Changing backend, changing schema, server side logic
 globs: 
 alwaysApply: false
 ---
-This project is built on 'Zero' by rocicorp. this is sync engine where everything is frontend driven, though you can do standard edits to postgres and the frontend will react to them if permissions pass etc. If you need to edit the backend schema you need to edit [seed.sql](mdc:docker/seed.sql) which sets up the db and also [schema.ts](mdc:src/schema.ts) which defines both the backend and frontend schema.
+This project is built on 'Zero' by rocicorp. this is sync engine where everything is frontend driven, though you can do standard edits to postgres and the frontend will react to them if permissions pass etc. If you need to edit the backend schema you need to edit [seed.sql](mdc:docker/seed.sql) which sets up the db and also [zero-schema.ts](mdc:src/zero-schema.ts) and [schema.ts](mdc:src/db/schema.ts) which defines both the backend and frontend schema.

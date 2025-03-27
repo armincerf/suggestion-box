@@ -1,6 +1,3 @@
-import type { JSX } from "solid-js";
-import { PaperClipIcon, MoodSelector } from "./MoodSelector";
-
 interface FormToolbarProps {
 	isSubmitting: boolean;
 	isDisabled: boolean;

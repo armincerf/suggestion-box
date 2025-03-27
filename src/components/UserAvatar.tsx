@@ -1,8 +1,10 @@
-import { createSignal, type JSX, Show } from "solid-js";
+import { createMemo, createSignal, Index, type JSX, Show } from "solid-js";
 import { useZero } from "../context/ZeroContext";
 import { useQuery } from "@rocicorp/zero/solid";
 import { AvatarEditorModal } from "./AvatarEditor";
 import { Popover } from "@ark-ui/solid/popover";
+import { createListCollection, Select } from "@ark-ui/solid";
+import { Portal } from "solid-js/web";
 
 function AvatarDetails(props: {
 	isMe: boolean;
@@ -72,7 +74,7 @@ export function UserAvatar(props: UserAvatarProps) {
 	const isCurrentUser = () => props.userId === z.userID;
 	const editable = () => props.editable !== false && isCurrentUser();
 
-	const [user] = useQuery(() => z.query.user.where("id", props.userId).one(), {
+	const [user] = useQuery(() => z.query.users.where("id", props.userId).one(), {
 		ttl: "forever",
 	});
 
@@ -112,7 +114,7 @@ export function UserAvatar(props: UserAvatarProps) {
 	const handleAvatarUpdate = async (newAvatarUrl: string) => {
 		try {
 			// Update the user's avatar in the database
-			await z.mutate.user.update({
+			await z.mutate.users.update({
 				id: z.userID,
 				avatarUrl: newAvatarUrl,
 			});
@@ -185,5 +187,104 @@ export function UserAvatar(props: UserAvatarProps) {
 				/>
 			</Show>
 		</>
+	);
+}
+
+export function SelectUser(props: {
+	userIds: string[];
+	selectedUserId: string | undefined;
+	setSelectedUserId: (userId: string | undefined) => void;
+	disabled?: boolean;
+}) {
+	const z = useZero();
+	const userIds = () => props.userIds;
+	const selectedUserId = () => props.selectedUserId;
+	const [users] = useQuery(
+		() =>
+			z.query.users.where("id", "IN", userIds()).orderBy("displayName", "asc"),
+		{
+			ttl: "forever",
+		},
+	);
+	const usersOptions = createMemo(() =>
+		createListCollection({
+			items: users().map((user) => ({
+				id: user.id,
+				displayName: user.displayName,
+				avatar: user.avatarUrl,
+			})),
+		}),
+	);
+	const selectedUserName = createMemo(() => {
+		const user = users().find((user) => user.id === selectedUserId());
+		return user?.displayName ?? "";
+	});
+
+	return (
+		<Select.Root
+			collection={usersOptions()}
+			value={[selectedUserId() ?? ""]}
+			onValueChange={(e) => {
+				console.log("e", e);
+				if (e.items.length === 0) {
+					props.setSelectedUserId(undefined);
+				}
+			}}
+			disabled={props.disabled}
+		>
+			<Select.Control class="flex items-center justify-between w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 bg-white dark:bg-gray-700 text-sm">
+				<Select.Trigger class="flex-1 text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
+					<Select.ValueText
+						placeholder={
+							selectedUserId()
+								? `Assigned to ${selectedUserName()}`
+								: "Select a User"
+						}
+						class="text-gray-700 dark:text-gray-200"
+					/>
+				</Select.Trigger>
+				<Show when={selectedUserId()}>
+					<Select.ClearTrigger class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+						Clear
+					</Select.ClearTrigger>
+				</Show>
+			</Select.Control>
+			<Portal>
+				<Select.Positioner class="z-10 w-64">
+					<Select.Content class="max-h-60 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg mt-1">
+						<Select.ItemGroup>
+							<Select.ItemGroupLabel class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+								Users
+							</Select.ItemGroupLabel>
+							<Index each={usersOptions().items}>
+								{(item) => (
+									<Select.Item
+										item={item()}
+										class="flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+										onClick={() => props.setSelectedUserId(item().id)}
+									>
+										<Select.ItemText class="flex-1">
+											{item().displayName}
+										</Select.ItemText>
+										<Show when={item().avatar}>
+											{(avatar) => (
+												<Select.ItemIndicator class="ml-2">
+													<img
+														src={avatar()}
+														alt={item().displayName}
+														class="w-5 h-5 rounded-full"
+													/>
+												</Select.ItemIndicator>
+											)}
+										</Show>
+									</Select.Item>
+								)}
+							</Index>
+						</Select.ItemGroup>
+					</Select.Content>
+				</Select.Positioner>
+			</Portal>
+			<Select.HiddenSelect />
+		</Select.Root>
 	);
 }

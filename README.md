@@ -76,10 +76,40 @@ Users are assigned a random identifier stored in localStorage when they first vi
   - `docker-compose.yml` - Container setup
   - `seed.sql` - Database initialization
 
-## Troubleshooting
+## Logging
 
-If you encounter the error `Failed to load zero schema from src/schema.ts`, make sure:
+The application uses HyperDX for logging in production environments. In development, logs are formatted and displayed in the console.
 
-1. You have `"type": "module"` in your package.json
-2. The schema.ts file uses ESM syntax (not using `type` imports)
-3. Your tsconfig.json has the correct ESM configuration
+### Using the logger
+
+```typescript
+import { logger } from './hyperdx-logger';
+
+// Basic logging
+logger.info('User logged in');
+logger.warn('Failed login attempt', { username: 'testuser' });
+logger.error('Request failed', new Error('Network error'), { url: '/api/data' });
+logger.debug('Debug information', { requestId: '123' });
+
+// Setting user information
+logger.setUserInfo({
+  userId: 'user123',
+  userEmail: 'user@example.com',
+  userName: 'Test User',
+  teamName: 'Engineering'
+});
+
+// Tracking custom actions
+logger.trackAction('Button-Clicked', {
+  buttonId: 'submit-form',
+  formName: 'Signup Form'
+});
+```
+
+In development, logs are formatted for the console. In production, logs are sent to HyperDX for centralized logging and monitoring.
+
+HyperDX will also automatically capture:
+- Console logs
+- Network requests (XHR/fetch/websocket)
+- Exceptions
+- Session replays (to see what users were experiencing)
