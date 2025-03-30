@@ -1,8 +1,11 @@
-import { useZero } from "../zero/ZeroContext";
-import { BaseForm } from "./BaseForm";
+import { useZero } from "../../zero/ZeroContext";
+import { BaseForm } from "../BaseForm";
 import { createSignal, For } from "solid-js";
-import { useCategories } from "../hooks/data/useCategories";
-import { useCreateSuggestion } from "../hooks/mutations/suggestionMutations";
+import { useCategories } from "../../hooks/data/useCategories";
+import { useCreateSuggestion } from "../../hooks/mutations/suggestionMutations";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:SuggestionForm");
 
 interface SuggestionFormProps {
 	displayName: string;
@@ -51,7 +54,7 @@ export function SuggestionForm(props: SuggestionFormProps) {
 				onSubmitError()?.(result.error);
 			}
 		} catch (error) {
-			console.error("Error submitting suggestion:", error);
+			logger.error("Error submitting suggestion:", error);
 			setSubmitError("An unexpected error occurred. Please try again.");
 			onSubmitError()?.(error instanceof Error ? error : new Error(String(error)));
 		}

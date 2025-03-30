@@ -1,6 +1,11 @@
 import { createSignal, Show } from "solid-js";
-import { Pencil, X, Check } from "lucide-solid";
+import Pencil from "lucide-solid/icons/pencil";
+import X from "lucide-solid/icons/x";
+import Check from "lucide-solid/icons/check";
 import { useZero } from "../zero/ZeroContext";
+import { createLogger } from "../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:EditableDisplayName");
 
 interface EditableDisplayNameProps {
   displayName: string;
@@ -25,12 +30,12 @@ export function EditableDisplayName(props: EditableDisplayNameProps) {
           displayName: newName,
         });
         localStorage.setItem("username", newName);
-        console.log("User name saved:", newName);
+        logger.info("User name saved:", { newName });
         if (props.onSave) {
           props.onSave(newName);
         }
       } catch (error) {
-        console.error("Failed to save user name:", error);
+        logger.error("Failed to save user name:", error);
       } finally {
         setIsSubmitting(false);
       }

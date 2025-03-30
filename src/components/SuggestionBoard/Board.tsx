@@ -13,6 +13,7 @@ export function Board(props: {
 	suggestions: Accessor<Suggestion[]>;
 }) {
 	const [categories] = useCategories();
+	let xScrollableRef: HTMLDivElement | undefined;
 
 	const visibleCategoryList = createMemo(() => {
 		const categoriesCopy = [...categories()];
@@ -30,16 +31,15 @@ export function Board(props: {
 	});
 
 	onMount(() => {
-		if (window.innerWidth < 768) {
-			setTimeout(() => {
-				const xScrollable = document.getElementById("x-scrollable");
-				if (xScrollable) {
-					xScrollable.scrollTo({
-						left: 400,
-						behavior: "smooth",
-					});
-				}
-			}, 100);
+		if (window.innerWidth < 768 && xScrollableRef) {
+			requestAnimationFrame(() => {
+				const scrollAmount =
+					xScrollableRef.scrollWidth / 2 - xScrollableRef.clientWidth / 2;
+				xScrollableRef.scrollTo({
+					left: scrollAmount > 0 ? scrollAmount : 400,
+					behavior: "smooth",
+				});
+			});
 		}
 	});
 
@@ -54,6 +54,7 @@ export function Board(props: {
 			)}
 		>
 			<div
+				ref={xScrollableRef}
 				id="x-scrollable"
 				aria-label={`${props.suggestions().length} suggestions`}
 				class={cn(

@@ -8,10 +8,13 @@ import { QUERY_TTL_FOREVER } from "../../utils/constants";
 export type SortOption = "thumbsUp" | "thumbsDown" | "newest" | "oldest";
 
 function calculateRating(reactions: Readonly<Reaction[]> | undefined): number {
-	if (!reactions) return 0;
-	const thumbsUp = reactions.filter((r) => r.emoji === "👍").length;
-	const thumbsDown = reactions.filter((r) => r.emoji === "👎").length;
-	return thumbsUp - thumbsDown;
+	if (!reactions || reactions.length === 0) return 0;
+
+	return reactions.reduce((score, r) => {
+		if (r.emoji === "👍") return score + 1;
+		if (r.emoji === "👎") return score - 1;
+		return score;
+	}, 0);
 }
 
 export const suggestionsWithRelationsQuery = (z: TZero) =>
@@ -38,7 +41,7 @@ export function useSuggestions(skipFilters?: boolean) {
 
 		if (!skipFilters && selectedUserIds.length > 0) {
 			q = q.where(({ cmp, or }) => {
-				return or(...selectedUserIds.map(id => cmp("userId", "=", id)));
+				return or(...selectedUserIds.map((id) => cmp("userId", "=", id)));
 			});
 		}
 
@@ -51,7 +54,9 @@ export function useSuggestions(skipFilters?: boolean) {
 		return q;
 	});
 
-	const [suggestionsData, details] = useQuery(filteredQuery, { ttl: QUERY_TTL_FOREVER });
+	const [suggestionsData, details] = useQuery(filteredQuery, {
+		ttl: QUERY_TTL_FOREVER,
+	});
 
 	const sortedSuggestions = createMemo(() => {
 		const currentSort = sort();
@@ -82,12 +87,13 @@ export const suggestionByIdQuery = (z: TZero, suggestionId: string) =>
 
 export function useSuggestionById(suggestionId: string) {
 	const z = useZero();
-	return useQuery(
-		() => suggestionByIdQuery(z, suggestionId),
-		{ ttl: QUERY_TTL_FOREVER }
-	);
+	return useQuery(() => suggestionByIdQuery(z, suggestionId), {
+		ttl: QUERY_TTL_FOREVER,
+	});
 }
 
-export function useSuggestionRating(reactions: Accessor<Readonly<Reaction[]> | undefined>) {
+export function useSuggestionRating(
+	reactions: Accessor<Readonly<Reaction[]> | undefined>,
+) {
 	return createMemo(() => calculateRating(reactions()));
-} 
+}

@@ -1,5 +1,8 @@
 import { type TZero, useZero } from "../../zero/ZeroContext";
 import { v4 as uuidv4 } from "uuid";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:suggestionMutations");
 
 /**
  * Type for mutation results with error handling
@@ -27,7 +30,7 @@ export function useDeleteSuggestion(onSuccess?: (suggestionId: string) => void) 
 			onSuccess?.(suggestionId);
 			return { success: true, data: true }; // Indicate success
 		} catch (error) {
-			console.error("Failed to soft delete suggestion:", error);
+			logger.error("Failed to soft delete suggestion:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error))
@@ -60,7 +63,7 @@ export function useEditSuggestion(onSuccess?: (suggestionId: string) => void) {
 			onSuccess?.(suggestionId);
 			return { success: true, data: suggestionId };
 		} catch (error) {
-			console.error("Failed to update suggestion:", error);
+			logger.error("Failed to update suggestion:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error)),
@@ -100,7 +103,7 @@ export function useCreateSuggestion(
 			onSuccess?.(suggestionId);
 			return { success: true, data: suggestionId };
 		} catch (error) {
-			console.error("Failed to create suggestion:", error);
+			logger.error("Failed to create suggestion:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error)),
@@ -144,7 +147,7 @@ export function useAddComment(onSuccess?: (commentId: string) => void) {
 			onSuccess?.(commentId);
 			return { success: true, data: commentId };
 		} catch (error) {
-			console.error("Failed to add comment:", error);
+			logger.error("Failed to add comment:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error))
@@ -171,7 +174,7 @@ export function useDeleteComment(onSuccess?: () => void) {
 			onSuccess?.();
 			return { success: true, data: true };
 		} catch (error) {
-			console.error("Failed to delete comment:", error);
+			logger.error("Failed to delete comment:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error))

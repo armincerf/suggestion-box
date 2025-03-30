@@ -6,6 +6,9 @@ import {
 	QUERY_TTL_FOREVER,
 	QUERY_TTL_SHORT,
 } from "../../utils/constants";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:useSession");
 
 export const sessionByIdQuery = (z: TZero, id: string) =>
 	z.query.sessions.where("id", "=", id).one();
@@ -152,7 +155,7 @@ export function useSessionMutations() {
 			// Update local session state
 			setCurrentSessionId(sessionId);
 		} catch (error) {
-			console.error("Failed to start session:", error);
+			logger.error("Failed to start session:", error);
 		}
 	};
 
@@ -173,7 +176,7 @@ export function useSessionMutations() {
 			// Clear local session state
 			setCurrentSessionId(null);
 		} catch (error) {
-			console.error("Failed to end session:", error);
+			logger.error("Failed to end session:", error);
 		}
 	};
 

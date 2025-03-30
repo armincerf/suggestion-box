@@ -1,14 +1,16 @@
 import { Show, createSignal, createMemo } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
-import { SuggestionFormWithCategoryPicker } from "../components/SuggestionForm";
+import { SuggestionFormWithCategoryPicker } from "../components/SuggestionCard/SuggestionForm";
 import { ErrorFallback } from "../components/ErrorFallback";
 import { useZero } from "../zero/ZeroContext";
 import { cn } from "../utils/cn";
 import { useUser } from "../hooks/data/useUser";
 import { useActiveSessions } from "../hooks/data/useSession";
 import { useCreateSession } from "../hooks/mutations/sessionMutations";
-import { randID } from "../rand";
+import { createLogger } from "../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:HomePage");
 
 export function HomePageSkeleton() {
 	return (
@@ -48,7 +50,7 @@ function HomePage() {
 				navigate(`/sessions/${sessionId}`);
 			}
 		} catch (error) {
-			console.error("Error creating session:", error);
+			logger.error("Error creating session:", error);
 			throw error;
 		} finally {
 			setIsCreatingSession(false);

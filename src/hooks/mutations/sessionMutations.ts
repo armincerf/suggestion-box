@@ -1,6 +1,9 @@
 import { type TZero, useZero } from "../../zero/ZeroContext";
 import { v4 as uuidv4 } from "uuid";
 import type { MutationResult } from "./suggestionMutations";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:sessionMutations");
 
 /**
  * Creates a session with the specified users
@@ -24,7 +27,7 @@ export async function createSessionWithUsers(
 		
 		return { success: true, data: id };
 	} catch (error) {
-		console.error("Failed to create session:", error);
+		logger.error("Failed to create session:", error);
 		return {
 			success: false,
 			error: error instanceof Error ? error : new Error(String(error))
@@ -49,7 +52,7 @@ export async function updateSessionUsers(
 		
 		return { success: true, data: sessionId };
 	} catch (error) {
-		console.error("Failed to update session users:", error);
+		logger.error("Failed to update session users:", error);
 		return {
 			success: false,
 			error: error instanceof Error ? error : new Error(String(error))
@@ -74,7 +77,7 @@ export function useCreateSession() {
 			
 			return createSessionWithUsers(userId, userIds, z);
 		} catch (error) {
-			console.error("Failed to create session:", error);
+			logger.error("Failed to create session:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error))
@@ -100,7 +103,7 @@ export function useUpdateSession() {
 			
 			return updateSessionUsers(sessionId, userIds, z);
 		} catch (error) {
-			console.error("Failed to update session:", error);
+			logger.error("Failed to update session:", error);
 			return {
 				success: false,
 				error: error instanceof Error ? error : new Error(String(error))

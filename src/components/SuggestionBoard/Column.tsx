@@ -1,12 +1,11 @@
-import { createMemo, Suspense, For, Show, type Accessor } from "solid-js";
+import { Suspense, For, Show, type Accessor } from "solid-js";
 import { TransitionGroup } from "solid-transition-group";
-import { SuggestionItem } from "../SuggestionItem";
+import { SuggestionItem } from "../SuggestionCard/SuggestionItem";
 import { SkeletonLoader } from "../SkeletonLoader";
-import { SuggestionForm } from "../SuggestionForm";
+import { SuggestionForm } from "../SuggestionCard/SuggestionForm";
 import { cn } from "../../utils/cn";
 import { darkenHexString } from "../../utils/colorUtils";
 import type { Category, Suggestion } from "../../zero/schema";
-import { useSearchParams } from "@solidjs/router";
 
 export function Column(props: {
 	category: Category;
@@ -17,16 +16,6 @@ export function Column(props: {
 }) {
 	const backgroundColor = props.category.backgroundColor;
 	const backgroundColorDark = darkenHexString(backgroundColor, 150);
-	const [params] = useSearchParams();
-
-	// Pre-compute filtered suggestions once
-	const filteredSuggestions = createMemo(() => {
-		const userFilter = params.user;
-		if (userFilter) {
-			return props.suggestions().filter((s) => s.userId === userFilter);
-		}
-		return props.suggestions();
-	});
 
 	return (
 		<div
@@ -54,7 +43,7 @@ export function Column(props: {
 				<Suspense fallback={<SkeletonLoader type="suggestion" count={3} />}>
 					<ul class={cn("space-y-2 overflow-y-auto flex-col relative")}>
 						<TransitionGroup name="group-item">
-							<For each={filteredSuggestions()}>
+							<For each={props.suggestions()}>
 								{(suggestion) => (
 									<div class="snap-start snap-always py-1 group-item">
 										<SuggestionItem

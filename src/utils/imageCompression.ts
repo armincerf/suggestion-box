@@ -2,6 +2,8 @@
  * Utility for compressing and converting images to WebP format
  */
 
+import { logger } from "../hyperdx-logger";
+
 /**
  * Compresses an image using canvas
  */
@@ -189,7 +191,7 @@ export const imageToWebpDataUrl = async (file: File | Blob): Promise<string> => 
     // If compression failed, just convert the original file to data URL
     return blobToDataUrl(file);
   } catch (error) {
-    console.error("Error converting image to WebP:", error);
+    logger.error("Error converting image to WebP:", error);
     throw error;
   }
 };

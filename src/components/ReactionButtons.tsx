@@ -4,6 +4,9 @@ import { COMMON_EMOJIS } from "../utils/constants";
 import { Index } from "solid-js";
 import type { Suggestion, Comment } from "../zero/schema";
 import { useZero } from "../zero/ZeroContext";
+import { createLogger } from "../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:ReactionButtons");
 
 export function generateReactionId(entityId: string, userId: string) {
 	return `${entityId}-${userId}`;
@@ -71,7 +74,7 @@ export function ReactionButtons(props: {
 				}
 			}
 		} catch (error) {
-			console.error("Error toggling reaction:", error);
+			logger.error("Error toggling reaction:", error);
 			throw error; // Re-throw to be caught by ErrorBoundary
 		}
 	};

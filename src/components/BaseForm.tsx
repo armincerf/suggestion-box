@@ -4,9 +4,9 @@ import { FormToolbar } from "./FormToolbar";
 import { EditableDisplayName } from "./EditableDisplayName";
 import { UserAvatar } from "./UserAvatar";
 import { useIsScreenSmallerThan } from "../hooks/ui/useScreenSize";
-import { createForm } from "@felte/solid";
-import { Button } from "./ui/Button";
-import { useZero } from "../zero/ZeroContext";
+import { createLogger } from "../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:BaseForm");
 
 export interface BaseFormProps {
 	userId: string;
@@ -42,7 +42,7 @@ export function BaseForm(props: BaseFormProps) {
 			await props.onSubmit(text().trim());
 			setText(""); // Clear the input after successful submission
 		} catch (error) {
-			console.error("Failed to submit:", error);
+			logger.error("Failed to submit:", error);
 		} finally {
 			setIsSubmitting(false);
 		}

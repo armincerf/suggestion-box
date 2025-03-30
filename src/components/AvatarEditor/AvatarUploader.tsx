@@ -3,6 +3,9 @@ import {
 	blobToDataUrl,
 	imageToWebpDataUrl,
 } from "../../utils/imageCompression";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:AvatarUploader");
 
 interface AvatarUploaderProps {
 	onUpdate: (dataUrl: string) => void;
@@ -62,13 +65,13 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 		try {
 			// Convert to WebP, resize to 64x64, and compress
 			const webpDataUrl = await imageToWebpDataUrl(file);
-			console.log("Image processed successfully", {
+			logger.info("Image processed successfully", {
 				originalSize: (await blobToDataUrl(file)).length,
 				compressedSize: webpDataUrl.length,
 			});
 			props.onUpdate(webpDataUrl);
 		} catch (error) {
-			console.error("Error processing image:", error);
+			logger.error("Error processing image:", error);
 			setErrorMessage("Failed to process image. Please try another file.");
 		} finally {
 			setIsProcessing(false);

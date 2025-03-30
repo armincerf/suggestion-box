@@ -7,6 +7,9 @@ import { createListCollection, Select } from "@ark-ui/solid";
 import { Portal } from "solid-js/web";
 import { useUser } from "../hooks/data/useUser";
 import { QUERY_TTL_FOREVER } from "../utils/constants";
+import { createLogger } from "../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:UserAvatar");
 
 function AvatarDetails(props: {
 	isMe: boolean;
@@ -124,8 +127,8 @@ export function UserAvatar(props: UserAvatarProps) {
 
 			setShowEditor(false);
 		} catch (error) {
-			console.error("Failed to update avatar:", error);
-			// You could add error handling UI here
+			logger.error("Failed to update avatar:", error);
+			throw error;
 		}
 	};
 	const [showDetails, setShowDetails] = createSignal(false);
@@ -228,7 +231,7 @@ export function SelectUser(props: {
 			collection={usersOptions()}
 			value={[selectedUserId() ?? ""]}
 			onValueChange={(e) => {
-				console.log("e", e);
+				logger.info("onValueChange", { e });
 				if (e.items.length === 0) {
 					props.setSelectedUserId(undefined);
 				}

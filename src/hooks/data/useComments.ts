@@ -1,6 +1,6 @@
 import { useQuery } from "@rocicorp/zero/solid";
 import { type TZero, useZero } from "../../zero/ZeroContext";
-import { createMemo } from "solid-js";
+import { type Accessor, createMemo } from "solid-js";
 import { DUMMY_QUERY_ID, QUERY_TTL_FOREVER } from "../../utils/constants";
 
 export const commentsBySuggestionQuery = (z: TZero, suggestionId: string) =>
@@ -15,7 +15,7 @@ export function useComments(suggestionId: string) {
 }
 
 interface UseCommentRepliesParams {
-	commentId: string;
+	commentId: Accessor<string>;
 }
 
 /**
@@ -34,7 +34,7 @@ export function useCommentReplies(params: UseCommentRepliesParams) {
 			}
 
 			return z.query.comments
-				.where("parentCommentId", params.commentId)
+				.where("parentCommentId", params.commentId())
 				.related("reactions");
 		},
 		{ ttl: QUERY_TTL_FOREVER },

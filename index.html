@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agile 3000 turbo pro max™️</title>
   <style id="user-selection-styles">
+    /* Initial Base Styles (Apply before JS potentially hides things) */
     :root {
       --primary-color: #4338ca;
       --primary-hover-color: #3730a3;
@@ -31,27 +32,32 @@
       }
     }
 
-    /* Scope body styles to only apply before the app loads */
-    body.user-selection-active {
+    body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       height: 100vh;
       width: 100%;
-      overflow-x: hidden;
+      overflow: hidden;
+      /* Prevent scrollbars during loading */
       transition: background-color 0.3s ease, color 0.3s ease;
       margin: 0;
       padding: 0;
+      opacity: 1;
+      /* Start visible */
+      transition: opacity 0.3s ease-out;
     }
 
-    /* Global reset only for user selection screen */
-    #userSelection * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    body.app-loading {
+      opacity: 0;
+      /* Fade out body when app loader takes over */
     }
 
+
+    /* User Selection Screen Styles */
     #userSelection {
+      display: none;
+      /* Hidden by default */
       height: 100vh;
       width: 100%;
       flex-direction: column;
@@ -59,6 +65,24 @@
       justify-content: center;
       padding: 1rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      position: fixed;
+      /* Keep it fixed while body might fade */
+      top: 0;
+      left: 0;
+      z-index: 10;
+      /* Below main loader */
+      background-color: var(--bg-color);
+      /* Ensure it has a background */
+    }
+
+    #userSelection.visible {
+      display: flex;
+    }
+
+    #userSelection * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     #userSelection .card {
@@ -67,7 +91,6 @@
       box-shadow: 0 4px 6px var(--shadow-color);
       width: 100%;
       max-width: 400px;
-      margin: 0 auto;
       padding: 1.5rem;
       transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
@@ -105,32 +128,64 @@
       width: 100%;
     }
 
-    #userSelection .btn:hover {
-      background-color: var(--primary-hover-color);
+    /* Apply user-specific button colors directly */
+    #userSelection .btn.user-alex {
+      background-color: #4C72B0;
     }
 
-    /* Loading indicator */
-    #loading-indicator {
+    #userSelection .btn.user-dan {
+      background-color: #DD8452;
+    }
+
+    #userSelection .btn.user-adrian {
+      background-color: #55A868;
+    }
+
+    #userSelection .btn.user-rhi {
+      background-color: #C44E52;
+    }
+
+    #userSelection .btn.user-john {
+      background-color: #8172B3;
+    }
+
+    #userSelection .btn.user-manny {
+      background-color: #937860;
+    }
+
+    #userSelection .btn.user-stepan {
+      background-color: #DA8BC3;
+    }
+
+    #userSelection .btn:hover {
+      filter: brightness(1.1);
+      /* Simple hover effect */
+    }
+
+    /* Main App Loading Indicator */
+    #app-loading-indicator {
+      /* display: none; */
+      /* REMOVED - Visible by default */
       display: flex;
-      /* Always visible by default */
-      height: 100vh;
-      width: 100%;
+      /* ADDED - Make visible by default */
+      position: fixed;
+      inset: 0;
+      background-color: var(--bg-color);
+      /* Match body background */
+      z-index: 100;
+      /* Highest */
       align-items: center;
       justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 100;
-      background-color: var(--bg-color);
     }
 
-    #loading-indicator .spinner {
+    #app-loading-indicator .spinner {
       width: 50px;
       height: 50px;
       border: 5px solid rgba(0, 0, 0, 0.1);
+      /* Use neutral color */
       border-radius: 50%;
       border-top-color: var(--primary-color);
+      /* Use theme color */
       animation: spin 1s ease-in-out infinite;
     }
 
@@ -140,161 +195,211 @@
       }
     }
 
-    .hidden {
-      display: none !important;
+    /* Hide root until app is ready */
+    #root {
+      display: none;
+    }
+
+    #root.visible {
+      display: block;
     }
   </style>
 </head>
 
-<body class="user-selection-active">
-  <div id="root" style="display: none;"></div>
-<!-- User Selection Screen -->
-  <div id="userSelection">
+<body class="app-loading">
+  <div id="root"></div>
+
+  <div id="userSelection" style="display: none;">
     <div class="card">
       <h2 class="card-title">Select User</h2>
       <div class="button-grid" id="userButtons">
-        <!-- Hardcoded user buttons -->
-        <button class="btn" style="background-color: #4C72B0;" onclick="selectUser('Alex')">Alex</button>
-        <button class="btn" style="background-color: #DD8452;" onclick="selectUser('Dan')">Dan</button>
-        <button class="btn" style="background-color: #55A868;" onclick="selectUser('Adrian')">Adrian</button>
-        <button class="btn" style="background-color: #C44E52;" onclick="selectUser('Rhi')">Rhi</button>
-        <button class="btn" style="background-color: #8172B3;" onclick="selectUser('John')">John</button>
-        <button class="btn" style="background-color: #937860;" onclick="selectUser('Manny')">Manny</button>
-        <button class="btn" style="background-color: #DA8BC3;" onclick="selectUser('Stepan')">Stepan</button>
+        <button class="btn user-alex" onclick="selectUser('Alex', '#4C72B0')">Alex</button>
+        <button class="btn user-dan" onclick="selectUser('Dan', '#DD8452')">Dan</button>
+        <button class="btn user-adrian" onclick="selectUser('Adrian', '#55A868')">Adrian</button>
+        <button class="btn user-rhi" onclick="selectUser('Rhi', '#C44E52')">Rhi</button>
+        <button class="btn user-john" onclick="selectUser('John', '#8172B3')">John</button>
+        <button class="btn user-manny" onclick="selectUser('Manny', '#937860')">Manny</button>
+        <button class="btn user-stepan" onclick="selectUser('Stepan', '#DA8BC3')">Stepan</button>
       </div>
     </div>
   </div>
 
+  <div id="app-loading-indicator">
+    <div class="spinner"></div>
+  </div>
+
   <script>
-    // Simple JWT encoding function (HS256 only)
-    async function createJWT(payload, secret, expiresInDays = 30) {
+    const JWT_SECRET = "zero";
+    const JWT_EXPIRY_DAYS = 30;
+    const USER_ID_KEY = 'userId';
+    const JWT_KEY = 'jwt';
+    const COLOR_KEY = 'color';
+
+    // --- Utility Functions ---
+
+    async function createJWT(payload) {
       const header = { alg: "HS256", typ: "JWT" };
       const iat = Math.floor(Date.now() / 1000);
-      const exp = iat + expiresInDays * 24 * 60 * 60;
+      const exp = iat + JWT_EXPIRY_DAYS * 24 * 60 * 60;
       const fullPayload = { ...payload, iat, exp };
 
-      function base64UrlEncode(obj) {
-        return btoa(JSON.stringify(obj))
+      function base64UrlEncode(str) {
+        return btoa(str)
           .replace(/\+/g, "-")
           .replace(/\//g, "_")
           .replace(/=+$/, "");
       }
 
-      const encHeader = base64UrlEncode(header);
-      const encPayload = base64UrlEncode(fullPayload);
-
+      const encHeader = base64UrlEncode(JSON.stringify(header));
+      const encPayload = base64UrlEncode(JSON.stringify(fullPayload));
       const unsignedToken = `${encHeader}.${encPayload}`;
 
       const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
+        "raw", new TextEncoder().encode(JWT_SECRET),
+        { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
       );
-
       const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(unsignedToken),
+        "HMAC", key, new TextEncoder().encode(unsignedToken)
       );
-
-      const encSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
+      const encSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
 
       return `${unsignedToken}.${encSignature}`;
     }
 
-    // Function to unload selection styles
-    function unloadSelectionStyles() {
-      const styleElement = document.getElementById('user-selection-styles');
-      if (styleElement) {
-        styleElement.remove();
-      }
-      document.body.classList.remove('user-selection-active');
+    function showElement(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('visible');
     }
 
-    // Function to hide all screens and show one specific screen
-    function showScreen(screenId) {
-      // Hide all screens
-      document.getElementById('userSelection').style.display = 'none';
-      document.getElementById('root').style.display = 'none';
-
-      // Show the requested screen
-      if (screenId === 'root') {
-        document.getElementById('root').style.display = 'block';
-      } else if (screenId === 'selection') {
-        document.getElementById('userSelection').style.display = 'flex';
-      }
+    function hideElement(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('visible');
     }
 
-    // Generate a random color
-    function generateColor() {
-      return `#${((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0')}`;
+    function loadScript(src, type = 'module') {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.type = type;
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
     }
+
+    // --- Core Logic ---
 
     async function initializeApp() {
+      console.log("Initializing app...");
       try {
-        const userIdFromStorage = localStorage.getItem('userId');
+        const userId = localStorage.getItem(USER_ID_KEY);
 
-        if (userIdFromStorage) {
-          // Create JWT
-          const jwt = await createJWT({ sub: userIdFromStorage }, "zero", 30);
-          localStorage.setItem('jwt', jwt);
+        if (userId) {
+          console.log(`Returning user found: ${userId}`);
+          // Returning user flow
+          // Loader is already visible, body is already fading out
+          // showElement('app-loading-indicator'); // REMOVED
+          // document.body.classList.add('app-loading'); // REMOVED
 
-          // Load the main app
-          loadApp();
+          const jwt = await createJWT({ sub: userId });
+          const color = localStorage.getItem(COLOR_KEY) || '#3498db'; // Get stored color or default
+          localStorage.setItem(JWT_KEY, jwt);
+          // UserID and Color are already in localStorage
+
+          console.log("JWT generated for returning user.");
+          await startMainApp(); // Load main app
+
         } else {
-          // Show user selection screen
-          showScreen('selection');
+          console.log("New user detected. Showing selection.");
+          // New user flow
+          hideElement('app-loading-indicator'); // ADDED - Hide the loader
+          showElement('userSelection'); // Show selection screen
+          document.body.classList.remove('app-loading'); // ADDED - Make body visible for selection
         }
       } catch (error) {
         console.error("App initialization error:", error);
+        // Optionally display an error message to the user here
       }
     }
 
-    async function selectUser(userId) {
+    async function selectUser(userId, color) {
+      console.log(`User selected: ${userId}, Color: ${color}`);
       try {
-        // Set the user ID in localStorage
-        localStorage.setItem('userId', userId);
+        hideElement('userSelection'); // Hide selection screen
+        showElement('app-loading-indicator'); // Show loader
+        document.body.classList.add('app-loading'); // Start fading out body
 
-        const jwt = await createJWT({ sub: userId }, "zero", 30);
-        localStorage.setItem('jwt', jwt);
-        localStorage.setItem('color', generateColor());
+        const jwt = await createJWT({ sub: userId });
 
-        // Load the app
-        loadApp();
+        // Store details
+        localStorage.setItem(USER_ID_KEY, userId);
+        localStorage.setItem(JWT_KEY, jwt);
+        localStorage.setItem(COLOR_KEY, color); // Store selected color
+
+        console.log("JWT generated and details stored for new user.");
+        await startMainApp(); // Load main app
+
       } catch (error) {
         console.error("User selection error:", error);
+        // Optionally display an error message
+        hideElement('app-loading-indicator'); // Hide loader on error
+        showElement('userSelection');
+        document.body.classList.remove('app-loading');
       }
     }
 
-    function loadApp() {
-      // Load the main app script
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = '/src/main.tsx';
-
-      document.body.appendChild(script);
-
-      // Load the cursor party script
-      const cursorScript = document.createElement('script');
-      cursorScript.src = 'https://cursor-party.armincerf.partykit.dev/cursors.js';
-      document.body.appendChild(cursorScript);
-
-      // Wait a short delay to ensure scripts start loading before showing the root
-      setTimeout(() => {
-        // Show app container
-        showScreen('root');
-
-        // Unload selection styles after a short delay to ensure smooth transition
-        setTimeout(unloadSelectionStyles, 300);
-      }, 100);
+    async function startMainApp() {
+      console.log("Loading main app scripts...");
+      try {
+        // Load main app script and cursor party script in parallel
+        await Promise.all([
+          loadScript('/src/main.tsx', 'module'),
+          loadScript('https://cursor-party.armincerf.partykit.dev/cursors.js', 'text/javascript') // Assuming this is plain JS
+        ]);
+        console.log("Main app scripts loaded.");
+        // main.tsx will take over rendering and hiding the loader
+      } catch (error) {
+        console.error("Failed to load app scripts:", error);
+        // Handle script loading errors (e.g., show a persistent error message)
+        document.getElementById('app-loading-indicator').innerHTML = `
+            <p style="color: var(--error-color); text-align: center;">
+                Failed to load application.<br>Please try refreshing the page.
+            </p>
+        `;
+      }
     }
 
-    // Initialize on page load
+    // --- Global App Control (Called from main.tsx) ---
+    window.appReady = () => {
+      console.log("App signaling ready. Hiding loader, showing root.");
+      hideElement('app-loading-indicator');
+      showElement('root');
+      document.body.classList.remove('app-loading'); // Ensure body is visible
+
+      // Clean up user selection styles after a brief delay for transition
+      setTimeout(() => {
+        const styleElement = document.getElementById('user-selection-styles');
+        if (styleElement) {
+          styleElement.remove();
+          console.log("User selection styles removed.");
+        }
+        document.body.style.overflow = ''; // Restore scrolling
+      }, 100); // Small delay allows fade-in of app content
+    };
+
+    window.appError = (message) => {
+      console.error("App signaling error:", message);
+      const loader = document.getElementById('app-loading-indicator');
+      if (loader) {
+        loader.innerHTML = `<p style="color: var(--error-color); text-align: center;">${message || 'An error occurred.'}</p>`;
+        showElement('app-loading-indicator'); // Ensure loader is visible for error
+      }
+      hideElement('root'); // Hide potentially broken app
+      document.body.classList.remove('app-loading'); // Make sure body isn't faded
+    }
+
+
+    // --- Initialization ---
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initializeApp);
     } else {

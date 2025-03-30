@@ -2,15 +2,6 @@ import { lazy, ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { type RouteDefinition, Router } from "@solidjs/router";
 
-function preloadOtherPages() {
-	import("./pages/FeedbackPage").then((module) => ({
-		default: module.FeedbackPage,
-	}));
-	import("./pages/SessionPage").then((module) => ({
-		default: module.SessionPage,
-	}));
-}
-
 const routes = [
 	{
 		path: "/",
@@ -57,7 +48,7 @@ function App() {
 				/>
 			)}
 		>
-			<Router rootPreload={preloadOtherPages}>{routes}</Router>
+			<Router>{routes}</Router>
 		</ErrorBoundary>
 	);
 }

@@ -1,18 +1,16 @@
 import { ErrorBoundary } from "solid-js";
-import { ErrorFallback } from "./ErrorFallback";
-import { useQuery } from "@rocicorp/zero/solid";
-import { useZero } from "../zero/ZeroContext";
-import { BaseForm } from "./BaseForm";
-import { useIsScreenSmallerThan } from "../hooks/ui/useScreenSize";
-import { QUERY_TTL_FOREVER } from "../utils/constants";
+import { ErrorFallback } from "../ErrorFallback";
+import { useZero } from "../../zero/ZeroContext";
+import { BaseForm } from "../BaseForm";
+import { useIsScreenSmallerThan } from "../../hooks/ui/useScreenSize";
 
 interface CommentFormProps {
 	onSubmit: (text: string) => Promise<void>;
 	placeholder?: string;
 	id: string;
-	parentCommentId?: string;
 	inReplyTo?: string;
 	displayName: string;
+	autoFocus?: boolean;
 }
 
 /**
@@ -20,18 +18,9 @@ interface CommentFormProps {
  */
 export function CommentForm(props: CommentFormProps) {
 	const z = useZero();
-	const [parentComment] = useQuery(
-		() =>
-			z.query.comments
-				.where("id", props.parentCommentId || "")
-				.one()
-				.related("reactions"),
-		{ ttl: QUERY_TTL_FOREVER },
-	);
-
 	// Get the reply name, ensuring it's a string or undefined
 	const getReplyName = () => {
-		const name = props.inReplyTo || parentComment()?.displayName;
+		const name = props.inReplyTo;
 		return name ? String(name) : undefined;
 	};
 
@@ -59,6 +48,7 @@ export function CommentForm(props: CommentFormProps) {
 				submitText={isSmallScreen() ? ">" : "Post Comment"}
 				submittingText="Posting..."
 				id={props.id}
+				autoFocus={!!props.autoFocus}
 			/>
 		</ErrorBoundary>
 	);

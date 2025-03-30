@@ -1,8 +1,7 @@
 import { createSignal, Show, Index, type Accessor } from "solid-js";
 import type { Suggestion, User, Category, Session } from "../../zero/schema";
-import { SuggestionItem } from "../SuggestionItem";
+import { SuggestionItem } from "../SuggestionCard/SuggestionItem";
 import { useUser } from "../../hooks/data/useUser";
-import { Trash2Icon } from "lucide-solid";
 import { useZero } from "../../zero/ZeroContext";
 import { useQuery } from "@rocicorp/zero/solid";
 import { SelectUser } from "../UserAvatar";
@@ -10,6 +9,7 @@ import { randID } from "../../rand";
 import { useCategories } from "../../hooks/data/useCategories";
 import { cn } from "../../utils/cn";
 import { darkenHexString } from "../../utils/colorUtils";
+import Trash2Icon from "lucide-solid/icons/trash-2";
 
 interface SuggestionReviewerProps {
 	currentSuggestion: Accessor<Suggestion | undefined>;

@@ -1,6 +1,6 @@
 import { type Accessor, For, Show } from "solid-js";
 import { cn } from "../../utils/cn";
-import { HomeIcon } from "lucide-solid";
+import HomeIcon from "lucide-solid/icons/home";
 import { UserAvatar } from "../UserAvatar";
 import { useSearchParams } from "@solidjs/router";
 
@@ -31,7 +31,7 @@ export function SessionToolbar(props: SessionToolbarProps) {
 	const isUserSelected = (userId: string) => {
 		const paramUserIds = searchParams.userId;
 		if (!paramUserIds) return false;
-		
+
 		let isSelected = false;
 		if (Array.isArray(paramUserIds)) {
 			isSelected = paramUserIds.includes(userId);
@@ -39,28 +39,28 @@ export function SessionToolbar(props: SessionToolbarProps) {
 			// Handle case where it's a single string
 			isSelected = paramUserIds === userId;
 		}
-		
+
 		return isSelected;
 	};
 
 	const handleUserSelect = (userId: string) => {
 		const currentUserIds = searchParams.userId;
-		
+
 		let selectedUserIds: string[] = [];
-		
+
 		if (currentUserIds) {
-			selectedUserIds = Array.isArray(currentUserIds) 
-				? [...currentUserIds] 
+			selectedUserIds = Array.isArray(currentUserIds)
+				? [...currentUserIds]
 				: [currentUserIds];
 		}
-		
+
 		const index = selectedUserIds.indexOf(userId);
 		if (index >= 0) {
 			selectedUserIds.splice(index, 1);
 		} else {
 			selectedUserIds.push(userId);
 		}
-		
+
 		if (selectedUserIds.length === 0) {
 			setSearchParams({ ...searchParams, userId: null });
 		} else {
@@ -90,11 +90,10 @@ export function SessionToolbar(props: SessionToolbarProps) {
 					<a href="/" class="btn btn-ghost hidden md:flex">
 						<HomeIcon class="w-6 h-6" />
 					</a>
-
+					<span class="badge badge-outline badge-primary mt-2">
+						Filter:
+					</span>
 					<div class="flex flex-wrap gap-2 items-center min-w-0">
-						<span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-							Filter:
-						</span>
 						<div class="flex gap-2 items-center overflow-x-auto max-w-[50dvw]">
 							<For each={props.users()}>
 								{(user) => (
@@ -121,7 +120,7 @@ export function SessionToolbar(props: SessionToolbarProps) {
 						</div>
 					</div>
 
-					<div class="flex items-center hidden md:flex">
+					<div class="flex  h-full items-center hidden md:flex mt-1">
 						<label
 							class="text-sm text-gray-600 dark:text-gray-400 mr-1 whitespace-nowrap"
 							for="sort-options"

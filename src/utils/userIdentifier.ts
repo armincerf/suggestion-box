@@ -1,3 +1,5 @@
+import { logger } from "../hyperdx-logger";
+
 /**
  * User identifier stored in localStorage
  * Gets or creates a unique user identifier from localStorage
@@ -16,7 +18,7 @@ export function getUserIdentifier(): string {
 		try {
 			localStorage.setItem(USER_ID_KEY, identifier);
 		} catch (error) {
-			console.error("Failed to store user identifier:", error);
+			logger.error("Failed to store user identifier:", error);
 		}
 	}
 	return identifier;

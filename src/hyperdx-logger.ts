@@ -7,7 +7,7 @@ import type { Attributes } from "@opentelemetry/api";
 export const HDX_API_KEY = "a64b47e8-0592-478b-b780-2b0a86ad4112";
 const SERVICE_NAME = "suggestion-box";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-const ENABLE_HDX_IN_DEV = true;
+const ENABLE_HDX_IN_DEV = false;
 
 // Initialize HyperDX
 if (IS_PRODUCTION) {
@@ -46,7 +46,7 @@ export interface Logger {
 	info(message: string, data?: Record<string, unknown>): void;
 	error(
 		message: string,
-		error?: Error | null,
+		error?: unknown,
 		data?: Record<string, unknown>,
 	): void;
 	warn(message: string, data?: Record<string, unknown>): void;
@@ -110,9 +110,11 @@ export function createLogger(serviceName: string): Logger {
 
 		error: (
 			message: string,
-			error: Error | null = null,
+			error: unknown = null,
 			data: Record<string, unknown> = {},
 		): void => {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
 			const logEntry: LogEntry = {
 				level: "error",
 				message,
@@ -125,8 +127,9 @@ export function createLogger(serviceName: string): Logger {
 
 			if (error) {
 				logEntry.error = {
-					message: error.message,
-					stack: error.stack ?? undefined,
+					message: errorMessage,
+					stack:
+						error instanceof Error ? (error.stack ?? undefined) : undefined,
 				};
 			}
 
@@ -217,7 +220,9 @@ export const attachToErrorBoundary = (
 		// For SolidJS, we simply log that this function won't work
 		// SolidJS errors are still captured by global error handlers below
 		if (ErrorBoundaryComponent) {
-			console.warn("HyperDX attachToErrorBoundary: Direct SolidJS ErrorBoundary integration not supported. Global error handlers will still capture unhandled errors.");
+			console.warn(
+				"HyperDX attachToErrorBoundary: Direct SolidJS ErrorBoundary integration not supported. Global error handlers will still capture unhandled errors.",
+			);
 		}
 	}
 };

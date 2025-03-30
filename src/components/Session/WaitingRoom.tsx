@@ -4,9 +4,11 @@ import { AvatarEditorModal } from "../AvatarEditor/AvatarEditorModal";
 import { useZero } from "../../zero/ZeroContext";
 import { useUser } from "../../hooks/data/useUser";
 import { useSessionMutations } from "../../hooks/data/useSession";
-import { ErrorFallback } from "../ErrorFallback";
-import { SuggestionFormWithCategoryPicker } from "../SuggestionForm";
+import { SuggestionFormWithCategoryPicker } from "../SuggestionCard/SuggestionForm";
 import { EditableDisplayName } from "../EditableDisplayName";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:WaitingRoom");
 
 interface WaitingRoomProps {
 	sessionId: string;
@@ -33,7 +35,7 @@ export function WaitingRoom(props: WaitingRoomProps) {
 			});
 			setShowAvatarEditor(false);
 		} catch (error) {
-			console.error("Error updating avatar:", error);
+			logger.error("Error updating avatar:", error);
 		}
 	};
 	const { startSession } = useSessionMutations();
