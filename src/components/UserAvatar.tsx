@@ -121,7 +121,6 @@ export function UserAvatar(props: UserAvatarProps) {
 		try {
 			// Update the user's avatar in the database
 			await z.mutate.users.update({
-				id: z.userID,
 				avatarUrl: newAvatarUrl,
 			});
 

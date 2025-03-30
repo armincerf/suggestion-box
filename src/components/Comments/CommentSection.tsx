@@ -5,7 +5,7 @@ import {
 	Suspense,
 	ErrorBoundary,
 } from "solid-js";
-import type { Suggestion, Comment } from "../../zero/schema";
+import type { Suggestion, Comment } from "../../../shared/zero/schema";
 import CommentForm from "./CommentForm";
 import { NestedComment } from "./NestedComment";
 import { ErrorFallback } from "../ErrorFallback";

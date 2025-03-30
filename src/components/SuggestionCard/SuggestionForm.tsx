@@ -9,7 +9,6 @@ const logger = createLogger("suggestion-box:SuggestionForm");
 
 interface SuggestionFormProps {
 	displayName: string;
-	onSubmitSuccess?: (suggestionId: string) => void;
 	onSubmitError?: (error: Error) => void;
 	compact?: boolean;
 	categoryID?: string;
@@ -21,42 +20,36 @@ interface SuggestionFormProps {
  */
 export function SuggestionForm(props: SuggestionFormProps) {
 	const displayName = () => props.displayName;
-	const onSubmitSuccess = () => props.onSubmitSuccess;
 	const onSubmitError = () => props.onSubmitError;
 	const compact = () => props.compact;
 	const z = useZero();
 	const [submitError, setSubmitError] = createSignal<string | null>(null);
-	
+
 	// Use the callback from the mutation hook to handle success
-	const createSuggestion = useCreateSuggestion((suggestionId) => {
-		onSubmitSuccess()?.(suggestionId);
-	});
+	const createSuggestion = useCreateSuggestion();
 
 	// Use the provided category if available; otherwise default to "continue"
 	const selectedCategory = () => props.categoryID ?? "continue";
 
 	const handleSubmit = async (text: string) => {
 		if (!text.trim() || !z) return;
-		
+
 		setSubmitError(null);
 
 		try {
-			const result = await createSuggestion(
-				text.trim(),
-				z.userID,
-				displayName(),
-				selectedCategory()
-			);
-			
+			const result = await createSuggestion(text.trim(), selectedCategory());
+
 			if (!result.success) {
 				// Handle error case
 				setSubmitError("Failed to submit suggestion. Please try again.");
-				onSubmitError()?.(result.error);
+				onSubmitError();
 			}
 		} catch (error) {
 			logger.error("Error submitting suggestion:", error);
 			setSubmitError("An unexpected error occurred. Please try again.");
-			onSubmitError()?.(error instanceof Error ? error : new Error(String(error)));
+			onSubmitError()?.(
+				error instanceof Error ? error : new Error(String(error)),
+			);
 		}
 	};
 

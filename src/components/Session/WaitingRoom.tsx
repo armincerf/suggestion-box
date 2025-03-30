@@ -1,5 +1,5 @@
 import { createMemo, createSignal, Show, For } from "solid-js";
-import type { User } from "../../zero/schema";
+import type { User } from "../../../shared/zero/schema";
 import { AvatarEditorModal } from "../AvatarEditor/AvatarEditorModal";
 import { useZero } from "../../zero/ZeroContext";
 import { useUser } from "../../hooks/data/useUser";
@@ -30,7 +30,6 @@ export function WaitingRoom(props: WaitingRoomProps) {
 
 		try {
 			await z.mutate.users.update({
-				id: userId,
 				avatarUrl: newAvatarUrl,
 			});
 			setShowAvatarEditor(false);

@@ -25,6 +25,7 @@ export function HomePageSkeleton() {
 
 function HomePage() {
 	const z = useZero();
+	console.log("z", z);
 	const { displayName, userId } = useUser();
 	const navigate = useNavigate();
 	const [isCreatingSession, setIsCreatingSession] = createSignal(false);

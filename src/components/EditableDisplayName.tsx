@@ -26,7 +26,6 @@ export function EditableDisplayName(props: EditableDisplayNameProps) {
       setIsSubmitting(true);
       try {
         await z.mutate.users.update({
-          id: z.userID,
           displayName: newName,
         });
         localStorage.setItem("username", newName);

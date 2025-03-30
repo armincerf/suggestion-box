@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import type { Suggestion } from "../../zero/schema";
+import type { Suggestion } from "../../../shared/zero/schema";
 import { ReactionButtons } from "../ReactionButtons";
 
 interface SuggestionActionsProps {

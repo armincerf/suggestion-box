@@ -1,6 +1,10 @@
-import { lazy, ErrorBoundary } from "solid-js";
+import { lazy, ErrorBoundary, Suspense } from "solid-js";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { type RouteDefinition, Router } from "@solidjs/router";
+import { Toaster, Toast } from "@ark-ui/solid/toast";
+import { toaster } from "./toast";
+import { Portal } from "solid-js/web";
+import XIcon from 'lucide-solid/icons/x'
 
 const routes = [
 	{
@@ -49,6 +53,31 @@ function App() {
 			)}
 		>
 			<Router>{routes}</Router>
+
+			<Portal>
+				<Toaster toaster={toaster}>
+					{(toast) => (
+						<Toast.Root class="alert shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=open]:slide-in-from-bottom-full">
+							<div>
+								<Toast.Title class="font-bold">{toast().title}</Toast.Title>
+								<Toast.Description class="text-sm">
+									{typeof toast().description === 'string'
+										? toast().description
+										: toast().description}
+								</Toast.Description>
+							</div>
+							{toast().action && (
+								<Toast.ActionTrigger class="btn btn-sm">
+									{toast().action?.label}
+								</Toast.ActionTrigger>
+							)}
+							<Toast.CloseTrigger class="btn btn-sm btn-ghost btn-square absolute top-2 right-2">
+								<XIcon class="w-4 h-4"/>
+							</Toast.CloseTrigger>
+						</Toast.Root>
+					)}
+				</Toaster>
+			</Portal>
 		</ErrorBoundary>
 	);
 }

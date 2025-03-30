@@ -7,7 +7,7 @@ import {
 	Index,
 } from "solid-js";
 import { ErrorBoundary } from "solid-js";
-import type { Comment } from "../../zero/schema";
+import type { Comment } from "../../../shared/zero/schema";
 import { getNameFromUserId } from "../../nameGenerator";
 import CommentForm from "./CommentForm";
 import { ErrorFallback } from "../ErrorFallback";
@@ -73,8 +73,6 @@ export function CommentItem(props: CommentItemProps) {
 		const result = await addComment(
 			text,
 			props.comment().suggestionId,
-			z.userID,
-			displayName() || "Anonymous",
 			props.comment().id, // parentCommentId
 			null, // selectionStart
 			null, // selectionEnd

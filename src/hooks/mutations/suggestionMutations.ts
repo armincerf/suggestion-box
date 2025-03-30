@@ -1,39 +1,30 @@
-import { type TZero, useZero } from "../../zero/ZeroContext";
-import { v4 as uuidv4 } from "uuid";
+import { useZero } from "../../zero/ZeroContext";
 import { createLogger } from "../../hyperdx-logger";
 
 const logger = createLogger("suggestion-box:suggestionMutations");
-
-/**
- * Type for mutation results with error handling
- */
-export type MutationResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: Error };
 
 /**
  * Hook to perform a soft delete on a suggestion by setting the deletedAt timestamp
  * @param onSuccess Optional callback function when the soft delete is successful
  * @returns A function to soft delete a suggestion with improved error reporting
  */
-export function useDeleteSuggestion(onSuccess?: (suggestionId: string) => void) {
+export function useDeleteSuggestion(
+	onSuccess?: (suggestionId: string) => void,
+) {
 	const z = useZero();
 
-	return async (suggestionId: string): Promise<MutationResult<boolean>> => {
+	return async (suggestionId: string) => {
 		try {
-			// Use UPDATE (not delete) to set deletedAt for soft delete
-			await z.mutate.suggestions.update({
-				id: suggestionId,
-				deletedAt: Date.now(), // Set the deletedAt timestamp
-			});
-			
+			// Use custom delete mutator
+			await z.mutate.suggestions.remove(suggestionId);
+
 			onSuccess?.(suggestionId);
 			return { success: true, data: true }; // Indicate success
 		} catch (error) {
 			logger.error("Failed to soft delete suggestion:", error);
 			return {
 				success: false,
-				error: error instanceof Error ? error : new Error(String(error))
+				error: error instanceof Error ? error : new Error(String(error)),
 			};
 		}
 	};
@@ -47,17 +38,12 @@ export function useDeleteSuggestion(onSuccess?: (suggestionId: string) => void) 
 export function useEditSuggestion(onSuccess?: (suggestionId: string) => void) {
 	const z = useZero();
 
-	return async (
-		suggestionId: string,
-		body: string,
-		categoryId: string,
-	): Promise<MutationResult<string>> => {
+	return async (suggestionId: string, body: string, categoryId: string) => {
 		try {
-			await z.mutate.suggestions.update({
+			await z.mutate.suggestions.customUpdate({
 				id: suggestionId,
 				body,
 				categoryId,
-				updatedAt: Date.now(),
 			});
 
 			onSuccess?.(suggestionId);
@@ -74,33 +60,18 @@ export function useEditSuggestion(onSuccess?: (suggestionId: string) => void) {
 
 /**
  * Hook to create a new suggestion
- * @param onSuccess Optional callback function when creation is successful
  * @returns A function to create a suggestion with improved error reporting
  */
-export function useCreateSuggestion(
-	onSuccess?: (suggestionId: string) => void,
-) {
+export function useCreateSuggestion() {
 	const z = useZero();
 
-	return async (
-		body: string,
-		userId: string,
-		displayName: string,
-		categoryId: string,
-	): Promise<MutationResult<string>> => {
+	return async (body: string, categoryId: string) => {
 		try {
-			const suggestionId = uuidv4();
-			await z.mutate.suggestions.insert({
-				id: suggestionId,
+			const suggestionId = await z.mutate.suggestions.create({
 				body,
-				userId,
-				displayName,
 				categoryId,
-				timestamp: Date.now(),
-				updatedAt: Date.now(),
 			});
 
-			onSuccess?.(suggestionId);
 			return { success: true, data: suggestionId };
 		} catch (error) {
 			logger.error("Failed to create suggestion:", error);
@@ -123,34 +94,30 @@ export function useAddComment(onSuccess?: (commentId: string) => void) {
 	return async (
 		body: string,
 		suggestionId: string,
-		userId: string,
-		displayName: string,
 		parentCommentId: string | null = null,
 		selectionStart: number | null = null,
 		selectionEnd: number | null = null,
-	): Promise<MutationResult<string>> => {
+	) => {
 		try {
-			const commentId = uuidv4();
-			await z.mutate.comments.insert({
-				id: commentId,
+			// Use custom comment add mutator
+			// Note: userId and displayName are now handled by the mutator using authData
+			await z.mutate.comments.add({
 				body,
 				suggestionId,
+				parentCommentId,
 				selectionStart,
 				selectionEnd,
-				timestamp: Date.now(),
-				userId,
-				displayName,
-				parentCommentId,
-				isRootComment: !parentCommentId, // Root comments have no parent
 			});
-			
-			onSuccess?.(commentId);
-			return { success: true, data: commentId };
+
+			// Same issue as with suggestions - no ID returned
+			const placeholderId = "created";
+			onSuccess?.(placeholderId);
+			return { success: true, data: placeholderId };
 		} catch (error) {
 			logger.error("Failed to add comment:", error);
 			return {
 				success: false,
-				error: error instanceof Error ? error : new Error(String(error))
+				error: error instanceof Error ? error : new Error(String(error)),
 			};
 		}
 	};
@@ -164,20 +131,18 @@ export function useAddComment(onSuccess?: (commentId: string) => void) {
 export function useDeleteComment(onSuccess?: () => void) {
 	const z = useZero();
 
-	return async (commentId: string): Promise<MutationResult<boolean>> => {
+	return async (commentId: string) => {
 		try {
-			await z.mutate.comments.update({
-				id: commentId,
-				deletedAt: Date.now(),
-			});
-			
+			// Use custom comment delete mutator
+			await z.mutate.comments.remove(commentId);
+
 			onSuccess?.();
 			return { success: true, data: true };
 		} catch (error) {
 			logger.error("Failed to delete comment:", error);
 			return {
 				success: false,
-				error: error instanceof Error ? error : new Error(String(error))
+				error: error instanceof Error ? error : new Error(String(error)),
 			};
 		}
 	};

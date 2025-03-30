@@ -1,5 +1,5 @@
 import { createMemo } from "solid-js";
-import type { Suggestion } from "../../zero/schema";
+import type { Suggestion } from "../../../shared/zero/schema";
 import { getNameFromUserId } from "../../nameGenerator";
 import { useRelativeTime } from "../../hooks/ui/useRelativeTime";
 import { UserAvatar } from "../UserAvatar";

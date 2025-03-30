@@ -4,7 +4,11 @@ import { SkeletonLoader } from "../SkeletonLoader";
 import { useUser } from "../../hooks/data/useUser";
 import { Board } from "../SuggestionBoard/Board";
 import { SessionToolbar } from "./SessionToolbar";
-import { type SortOption, useSuggestions } from "../../hooks/data/useSuggestions";
+import {
+	type SortOption,
+	useSuggestions,
+} from "../../hooks/data/useSuggestions";
+import { SearchPalette } from "../Search/SearchPalette";
 
 interface SessionBoardProps {
 	sessionId: string;
@@ -14,15 +18,21 @@ interface SessionBoardProps {
 	isSessionEnded: boolean;
 	isSessionStarted: boolean;
 	onEndSession: () => void;
+	isPollActive: boolean;
+	onReopenPollModal: (dismissed: boolean) => void;
 }
 
 export function SessionBoard(props: SessionBoardProps) {
 	const { userId, displayName } = useUser();
 	const [showConfirmEnd, setShowConfirmEnd] = createSignal(false);
-	const [searchParams, setSearchParams] = useSearchParams();
+	const [searchParams] = useSearchParams();
 
 	const [allSuggestions] = useSuggestions(true);
 	const [suggestions] = useSuggestions();
+	const [isSearchOpen, setIsSearchOpen] = createSignal(false);
+
+	const openSearch = () => setIsSearchOpen(true);
+	const closeSearch = () => setIsSearchOpen(false);
 
 	const users = createMemo(() => {
 		const users = new Set<string>();
@@ -33,7 +43,8 @@ export function SessionBoard(props: SessionBoardProps) {
 			return {
 				id: userId,
 				displayName:
-					allSuggestions().find((s) => s.userId === userId)?.displayName ?? null,
+					allSuggestions().find((s) => s.userId === userId)?.displayName ??
+					null,
 			};
 		});
 	});
@@ -46,13 +57,16 @@ export function SessionBoard(props: SessionBoardProps) {
 	return (
 		<div class="h-[100dvh] flex flex-col">
 			<SessionToolbar
+				onOpenSearch={openSearch}
+				sessionId={props.sessionId}
 				users={users}
 				isSessionLeader={props.isSessionLeader}
 				isSessionEnded={props.isSessionEnded}
 				onEndSession={() => setShowConfirmEnd(true)}
 				currentSortOption={(searchParams.sort as SortOption) || "thumbsUp"}
 				isSessionStarted={props.isSessionStarted}
-				setShowConfirmEnd={setShowConfirmEnd}
+				isPollActive={props.isPollActive}
+				onReopenPollModal={props.onReopenPollModal}
 			/>
 
 			<main class="flex-1 h-[var(--main-height)] bg-base-300 dark:bg-base-800">
@@ -98,6 +112,7 @@ export function SessionBoard(props: SessionBoardProps) {
 					</div>
 				</div>
 			</Show>
+			<SearchPalette isOpen={isSearchOpen()} onClose={closeSearch} />
 		</div>
 	);
 }
