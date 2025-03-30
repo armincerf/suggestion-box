@@ -50,10 +50,11 @@ export function Modal(props: ModalProps) {
 		<Show when={props.isOpen}>
 			<dialog
 				class={cn(
-					"fixed inset-0 z-[500] flex items-center justify-center",
-					// Use background color WITH opacity modifier
-					"bg-black/50 dark:bg-gray-900/70",
-					"w-full h-full p-0 m-0 open:flex"
+					"fixed inset-0 z-50",
+					"flex items-center justify-center",
+					"bg-black bg-opacity-50 w-full h-full p-0 m-0 open:flex",
+					"dark:bg-gray-900 dark:bg-opacity-50",
+					props.isOpen ? "flex" : "hidden",
 				)}
 				onClick={handleBackdropClick}
 				onKeyDown={handleBackdropKeyDown}
@@ -64,19 +65,19 @@ export function Modal(props: ModalProps) {
 				<div
 					class={cn(
 						"bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col",
-						"dark:bg-gray-800"
+						"dark:bg-gray-800",
 					)}
 					onClick={(e) => e.stopPropagation()}
 					onKeyDown={(e) => e.stopPropagation()}
 				>
 					{/* Header */}
-					<div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
-						<h2 id="modal-title" class="text-lg font-medium dark:text-white">
+					<div class="flex items-center justify-between p-4 border-b">
+						<h2 id="modal-title" class="text-lg font-medium">
 							{props.title}
 						</h2>
 						<button
 							type="button"
-							class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+							class="text-gray-400 hover:text-gray-500"
 							onClick={props.onClose}
 							aria-label="Close"
 						>
@@ -99,7 +100,7 @@ export function Modal(props: ModalProps) {
 					</div>
 
 					{/* Content */}
-					<div class="p-4 overflow-y-auto flex-1 dark:text-gray-200">{props.children}</div>
+					<div class="p-4 overflow-y-auto flex-1">{props.children}</div>
 				</div>
 			</dialog>
 		</Show>

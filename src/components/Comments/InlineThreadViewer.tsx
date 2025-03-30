@@ -1,5 +1,5 @@
 import { For, Index, type Accessor } from "solid-js";
-import type { Comment } from "../../../shared/zero/schema";
+import type { Comment } from "../../zero/schema";
 import { NestedComment } from "./NestedComment";
 import { cn } from "../../utils/cn";
 

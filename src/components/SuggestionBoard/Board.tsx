@@ -4,7 +4,7 @@ import { ErrorFallback } from "../ErrorFallback";
 import { cn } from "../../utils/cn";
 import { Column } from "./Column";
 import { useCategories } from "../../hooks/data/useCategories";
-import type { Suggestion } from "../../../shared/zero/schema";
+import type { Suggestion } from "../../zero/schema";
 
 export function Board(props: {
 	userId: string;

@@ -5,7 +5,7 @@ import { SkeletonLoader } from "../SkeletonLoader";
 import { SuggestionForm } from "../SuggestionCard/SuggestionForm";
 import { cn } from "../../utils/cn";
 import { darkenHexString } from "../../utils/colorUtils";
-import type { Category, Suggestion } from "../../../shared/zero/schema";
+import type { Category, Suggestion } from "../../zero/schema";
 
 export function Column(props: {
 	category: Category;

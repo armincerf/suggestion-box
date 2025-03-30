@@ -1,5 +1,5 @@
 import { createSignal, Show, Index, type Accessor } from "solid-js";
-import type { Suggestion, User, Category, Session } from "../../../shared/zero/schema";
+import type { Suggestion, User, Category, Session } from "../../zero/schema";
 import { SuggestionItem } from "../SuggestionCard/SuggestionItem";
 import { useUser } from "../../hooks/data/useUser";
 import { useZero } from "../../zero/ZeroContext";

@@ -50,6 +50,7 @@
 
     body.app-loading {
       opacity: 0;
+      /* Fade out body when app loader takes over */
     }
 
 
@@ -65,10 +66,13 @@
       padding: 1rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       position: fixed;
+      /* Keep it fixed while body might fade */
       top: 0;
       left: 0;
-      z-index: 90;
+      z-index: 10;
+      /* Below main loader */
       background-color: var(--bg-color);
+      /* Ensure it has a background */
     }
 
     #userSelection.visible {
@@ -167,7 +171,9 @@
       position: fixed;
       inset: 0;
       background-color: var(--bg-color);
-      z-index: 80;
+      /* Match body background */
+      z-index: 100;
+      /* Highest */
       align-items: center;
       justify-content: center;
     }
@@ -203,7 +209,7 @@
 <body class="app-loading">
   <div id="root"></div>
 
-  <div id="userSelection">
+  <div id="userSelection" style="display: none;">
     <div class="card">
       <h2 class="card-title">Select User</h2>
       <div class="button-grid" id="userButtons">

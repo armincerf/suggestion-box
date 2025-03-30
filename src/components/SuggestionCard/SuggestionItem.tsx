@@ -1,6 +1,6 @@
 import { createSignal, createMemo } from "solid-js";
 import { ErrorBoundary } from "solid-js";
-import type { Suggestion } from "../../../shared/zero/schema";
+import type { Suggestion } from "../../zero/schema";
 import { getNameFromUserId } from "../../nameGenerator";
 import { ErrorFallback } from "../ErrorFallback";
 import { useZero } from "../../zero/ZeroContext";
@@ -69,6 +69,8 @@ export function SuggestionItem(props: SuggestionItemProps) {
 			const result = await addCommentMutation(
 				text,
 				suggestion().id,
+				userId(),
+				displayName(),
 				null,
 				sel?.start ?? null,
 				sel?.end ?? null,

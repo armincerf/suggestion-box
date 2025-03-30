@@ -1,5 +1,5 @@
 import type { Accessor } from "solid-js";
-import type { Comment } from "../../../shared/zero/schema";
+import type { Comment } from "../../zero/schema";
 import { CommentItem } from "./CommentItem";
 
 interface NestedCommentProps {

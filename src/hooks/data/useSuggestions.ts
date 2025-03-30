@@ -2,7 +2,7 @@ import { useQuery } from "@rocicorp/zero/solid";
 import { type TZero, useZero } from "../../zero/ZeroContext";
 import { createMemo, type Accessor } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
-import type { Reaction } from "../../../shared/zero/schema";
+import type { Reaction } from "../../zero/schema";
 import { QUERY_TTL_FOREVER } from "../../utils/constants";
 
 export type SortOption = "thumbsUp" | "thumbsDown" | "newest" | "oldest";

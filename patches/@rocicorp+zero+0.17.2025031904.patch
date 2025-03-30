@@ -1,3 +1,7 @@
+diff --git a/node_modules/@rocicorp/zero/.DS_Store b/node_modules/@rocicorp/zero/.DS_Store
+new file mode 100644
+index 0000000..a001392
+Binary files /dev/null and b/node_modules/@rocicorp/zero/.DS_Store differ
 diff --git a/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js b/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js
 index 373649e..f0c9786 100644
 --- a/node_modules/@rocicorp/zero/out/zero-cache/src/server/syncer.js
