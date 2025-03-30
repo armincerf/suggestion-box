@@ -1,9 +1,10 @@
 import { ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "./ErrorFallback";
 import { useQuery } from "@rocicorp/zero/solid";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 import { BaseForm } from "./BaseForm";
-import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
+import { useIsScreenSmallerThan } from "../hooks/ui/useScreenSize";
+import { QUERY_TTL_FOREVER } from "../utils/constants";
 
 interface CommentFormProps {
 	onSubmit: (text: string) => Promise<void>;
@@ -25,7 +26,7 @@ export function CommentForm(props: CommentFormProps) {
 				.where("id", props.parentCommentId || "")
 				.one()
 				.related("reactions"),
-		{ ttl: "forever" },
+		{ ttl: QUERY_TTL_FOREVER },
 	);
 
 	// Get the reply name, ensuring it's a string or undefined

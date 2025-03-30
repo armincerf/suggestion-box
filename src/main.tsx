@@ -3,118 +3,41 @@ import { render } from "solid-js/web";
 import { createSignal, onMount } from "solid-js";
 import App from "./App";
 import "./index.css";
-import { schema, type Schema as AppSchema } from "./zero-schema";
+import { schema } from "./zero/schema";
 import { createZero } from "@rocicorp/zero/solid";
-import type { Zero } from "@rocicorp/zero";
-import { randID } from "./rand";
 import { LoadingSpinner } from "./components/LoadingSpinner";
-import { ZeroProvider } from "./context/ZeroContext";
-import { getNameFromUserId } from "./nameGenerator";
-import { cssColorNames } from "./utils/constants";
-import { logger, attachToErrorBoundary } from "../hyperdx-logger";
-import { ErrorBoundary } from "solid-js";
-
-// Attach SolidJS ErrorBoundary to HyperDX
-attachToErrorBoundary(ErrorBoundary);
-
-function must<T>(val: T) {
-	if (!val) {
-		throw new Error("Expected value to be defined");
-	}
-	return val;
-}
+import { ZeroProvider, type TZero } from "./zero/ZeroContext";
+import { createLogger } from "./hyperdx-logger";
+const logger = createLogger("suggestion-box:main");
 
 const root = document.getElementById("root");
 if (!root) {
 	throw new Error("Root element not found");
 }
 
-// Simple JWT encoding and decoding (HS256 only)
-async function createJWT(
-	payload: object,
-	secret: string,
-	expiresInDays = 30,
-): Promise<string> {
-	const header = { alg: "HS256", typ: "JWT" };
-	const iat = Math.floor(Date.now() / 1000);
-	const exp = iat + expiresInDays * 24 * 60 * 60;
-	const fullPayload = { ...payload, iat, exp };
-
-	function base64UrlEncode(obj: object): string {
-		return btoa(JSON.stringify(obj))
-			.replace(/\+/g, "-")
-			.replace(/\//g, "_")
-			.replace(/=+$/, "");
-	}
-
-	const encHeader = base64UrlEncode(header);
-	const encPayload = base64UrlEncode(fullPayload);
-
-	const unsignedToken = `${encHeader}.${encPayload}`;
-
-	const key = await crypto.subtle.importKey(
-		"raw",
-		new TextEncoder().encode(secret),
-		{ name: "HMAC", hash: "SHA-256" },
-		false,
-		["sign"],
-	);
-
-	const signature = await crypto.subtle.sign(
-		"HMAC",
-		key,
-		new TextEncoder().encode(unsignedToken),
-	);
-
-	const encSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-		.replace(/\+/g, "-")
-		.replace(/\//g, "_")
-		.replace(/=+$/, "");
-
-	return `${unsignedToken}.${encSignature}`;
-}
-
-function decodeJWT(token: string) {
-	const [, payload] = token.split(".");
-	const decodedPayload = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-	return JSON.parse(decodedPayload) as { sub: string };
-}
-
 function AppLoader() {
 	const [isLoading, setIsLoading] = createSignal(true);
-	const [zeroInstance, setZeroInstance] = createSignal<Zero<AppSchema> | null>(
-		null,
-	);
+	const [zeroInstance, setZeroInstance] = createSignal<TZero | null>(null);
 
 	onMount(async () => {
 		try {
-			let encodedJWT = localStorage.getItem("jwt");
-
-			if (!encodedJWT) {
-				const randomId = randID();
-				encodedJWT = await createJWT(
-					{ sub: randomId },
-					must(import.meta.env.VITE_ZERO_AUTH_SECRET),
-					30,
-				);
-
-				localStorage.setItem("jwt", encodedJWT);
+			// Get JWT and userID from localStorage (already set in index.html)
+			const encodedJWT = localStorage.getItem("jwt");
+			const userID = localStorage.getItem("userId");
+			const color = localStorage.getItem("color") || "#3498db"; // Provide default color
+			if (!encodedJWT || !userID) {
+				throw new Error("JWT or UserID not found in localStorage");
 			}
-
-			const decodedJWT = encodedJWT && decodeJWT(encodedJWT);
-			const userID =
-				typeof decodedJWT === "object" && "sub" in decodedJWT
-					? decodedJWT.sub
-					: "anon";
-			localStorage.setItem("userId", userID);
 
 			const z = createZero({
 				userID,
-				auth: () => encodedJWT ?? "anon",
+				auth: () => encodedJWT,
 				server: import.meta.env.VITE_PUBLIC_SERVER,
 				schema,
 				kvStore: "idb",
 			});
+
+			// Preload data in the background
 			z.query.users.preload();
 			z.query.sessions.preload();
 			z.query.suggestions.preload();
@@ -122,36 +45,47 @@ function AppLoader() {
 			z.query.reactions.preload();
 			z.query.categories.preload();
 
-			setTimeout(async () => {
-				const user = await z.query.users.where("id", userID).one().run();
-				logger.info("User data loaded", { user, userId: userID });
-				const avatarUrl = `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`;
+			// Check if user exists directly (no setTimeout)
+			const user = await z.query.users.where("id", userID).one().run();
+			logger.info("User data lookup done", {
+				userExists: !!user,
+				userId: userID,
+			});
+			const avatarUrl = `https://api.dicebear.com/6.x/bottts/svg?seed=${userID}`;
 
-				if (!user) {
-					z.mutate.users.insert({
-						id: userID,
-						displayName: getNameFromUserId(userID),
-						avatarUrl,
-						color:
-							cssColorNames[Math.floor(Math.random() * cssColorNames.length)],
-						createdAt: Date.now(),
-						updatedAt: Date.now(),
-					});
-					const newUser = await z.query.users.where("id", userID).one().run();
+			let finalUserName = userID;
+			let finalAvatarUrl = avatarUrl;
 
-					logger.info("Created new user", { userId: userID, user: newUser });
-				}
-				const userName = user?.displayName || getNameFromUserId(userID);
+			// If user doesn't exist in database yet, create it
+			if (!user) {
+				logger.info("Creating new user...", { userId: userID });
 
-				// Set user info for HyperDX
-				logger.setUserInfo({
-					userId: userID,
-					userName,
+				await z.mutate.users.insert({
+					id: userID,
+					displayName: userID, // Use the userID as name
+					avatarUrl,
+					color,
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
 				});
-				localStorage.setItem("username", userName);
-				localStorage.setItem("useravatar", user?.avatarUrl || avatarUrl);
-			}, 300);
 
+				logger.info("Created new user", { userId: userID });
+			} else {
+				// Use existing user's data
+				finalUserName = user.displayName || userID;
+				finalAvatarUrl = user.avatarUrl || avatarUrl;
+			}
+
+			// Set user info for HyperDX
+			logger.setUserInfo({
+				userId: userID,
+				userName: finalUserName,
+			});
+
+			localStorage.setItem("username", finalUserName);
+			localStorage.setItem("useravatar", finalAvatarUrl);
+
+			// Set Zero instance AFTER user is created/loaded
 			setZeroInstance(z);
 		} catch (error) {
 			logger.error(
@@ -168,7 +102,9 @@ function AppLoader() {
 			{isLoading() || !zeroInstance() ? (
 				<LoadingSpinner />
 			) : (
-				<ZeroProvider zero={zeroInstance() as Zero<AppSchema>}>
+				<ZeroProvider
+					zero={zeroInstance() as NonNullable<ReturnType<typeof zeroInstance>>}
+				>
 					<App />
 				</ZeroProvider>
 			)}

@@ -1,8 +1,8 @@
 import { SkeletonLoader } from "../components/SkeletonLoader";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 import { cn } from "../utils/cn";
-import { useUser } from "../hooks/useUser";
-import { useSuggestions } from "../hooks/useSuggestions";
+import { useUser } from "../hooks/data/useUser";
+import { useSuggestions } from "../hooks/data/useSuggestions";
 import { Board } from "../components/SuggestionBoard/Board";
 
 export function FeedbackPageSkeleton() {

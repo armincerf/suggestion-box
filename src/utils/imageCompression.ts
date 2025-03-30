@@ -198,10 +198,17 @@ export const imageToWebpDataUrl = async (file: File | Blob): Promise<string> => 
  * Converts a Blob to a data URL
  */
 export const blobToDataUrl = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+};
+
+/**
+ * Converts a File to a data URL
+ */
+export const fileToDataUrl = (file: File): Promise<string> => {
+  return blobToDataUrl(file);
 };

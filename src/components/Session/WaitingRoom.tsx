@@ -1,9 +1,9 @@
 import { createMemo, createSignal, Show, For } from "solid-js";
-import type { User } from "../../zero-schema";
+import type { User } from "../../zero/schema";
 import { AvatarEditorModal } from "../AvatarEditor/AvatarEditorModal";
-import { useZero } from "../../context/ZeroContext";
-import { useUser } from "../../hooks/useUser";
-import { startSession } from "../../hooks/useSession";
+import { useZero } from "../../zero/ZeroContext";
+import { useUser } from "../../hooks/data/useUser";
+import { useSessionMutations } from "../../hooks/data/useSession";
 import { ErrorFallback } from "../ErrorFallback";
 import { SuggestionFormWithCategoryPicker } from "../SuggestionForm";
 import { EditableDisplayName } from "../EditableDisplayName";
@@ -36,9 +36,10 @@ export function WaitingRoom(props: WaitingRoomProps) {
 			console.error("Error updating avatar:", error);
 		}
 	};
+	const { startSession } = useSessionMutations();
 	const handleStartSession = async () => {
 		if (!z || !userId || !props.isSessionLeader) return;
-		await startSession(z, props.sessionId, userId);
+		await startSession(props.sessionId);
 	};
 
 	const copyToClipboard = () => {

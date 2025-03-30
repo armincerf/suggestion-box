@@ -3,8 +3,8 @@ import { ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "../ErrorFallback";
 import { cn } from "../../utils/cn";
 import { Column } from "./Column";
-import type { Suggestion } from "../../zero-schema";
-import { useCategories } from "../../hooks/useCategories";
+import { useCategories } from "../../hooks/data/useCategories";
+import type { Suggestion } from "../../zero/schema";
 
 export function Board(props: {
 	userId: string;

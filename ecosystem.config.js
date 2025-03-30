@@ -1,4 +1,4 @@
-const prod_secret = "suggestion-box-secret-key-prod";
+const prod_secret = "zero";
 export const apps = [
 	{
 		name: "zero-cache",

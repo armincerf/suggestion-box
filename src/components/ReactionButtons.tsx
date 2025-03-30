@@ -2,8 +2,8 @@ import { ErrorBoundary, Suspense } from "solid-js";
 import { ErrorFallback } from "./ErrorFallback";
 import { COMMON_EMOJIS } from "../utils/constants";
 import { Index } from "solid-js";
-import type { Suggestion, Comment } from "../zero-schema";
-import { useZero } from "../context/ZeroContext";
+import type { Suggestion, Comment } from "../zero/schema";
+import { useZero } from "../zero/ZeroContext";
 
 export function generateReactionId(entityId: string, userId: string) {
 	return `${entityId}-${userId}`;

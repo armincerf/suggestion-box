@@ -3,7 +3,10 @@ import { TextField } from "./TextField";
 import { FormToolbar } from "./FormToolbar";
 import { EditableDisplayName } from "./EditableDisplayName";
 import { UserAvatar } from "./UserAvatar";
-import { useIsScreenSmallerThan } from "../hooks/useScreenSize";
+import { useIsScreenSmallerThan } from "../hooks/ui/useScreenSize";
+import { createForm } from "@felte/solid";
+import { Button } from "./ui/Button";
+import { useZero } from "../zero/ZeroContext";
 
 export interface BaseFormProps {
 	userId: string;

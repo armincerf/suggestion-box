@@ -1,10 +1,12 @@
 import { createMemo, createSignal, Index, type JSX, Show } from "solid-js";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 import { useQuery } from "@rocicorp/zero/solid";
 import { AvatarEditorModal } from "./AvatarEditor";
 import { Popover } from "@ark-ui/solid/popover";
 import { createListCollection, Select } from "@ark-ui/solid";
 import { Portal } from "solid-js/web";
+import { useUser } from "../hooks/data/useUser";
+import { QUERY_TTL_FOREVER } from "../utils/constants";
 
 function AvatarDetails(props: {
 	isMe: boolean;
@@ -69,20 +71,21 @@ interface UserAvatarProps {
 
 export function UserAvatar(props: UserAvatarProps) {
 	const z = useZero();
+	const { color: userColor } = useUser();
 	const [isHovered, setIsHovered] = createSignal(false);
 	const [showEditor, setShowEditor] = createSignal(false);
 	const isCurrentUser = () => props.userId === z.userID;
 	const editable = () => props.editable !== false && isCurrentUser();
 
 	const [user] = useQuery(() => z.query.users.where("id", props.userId).one(), {
-		ttl: "forever",
+		ttl: QUERY_TTL_FOREVER,
 	});
 
 	const avatarUrl = () => {
-		// Use the user's avatar if available, otherwise use a default
+		// Use the user's avatar if available, otherwise use a default with consistent color
 		return (
 			user()?.avatarUrl ||
-			`https://ui-avatars.com/api/?name=${encodeURIComponent(props.displayName)}&background=random`
+			`https://ui-avatars.com/api/?name=${encodeURIComponent(props.displayName)}&background=${encodeURIComponent(userColor().replace('#', ''))}&color=fff`
 		);
 	};
 
@@ -203,7 +206,7 @@ export function SelectUser(props: {
 		() =>
 			z.query.users.where("id", "IN", userIds()).orderBy("displayName", "asc"),
 		{
-			ttl: "forever",
+			ttl: QUERY_TTL_FOREVER,
 		},
 	);
 	const usersOptions = createMemo(() =>

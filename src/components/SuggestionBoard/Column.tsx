@@ -5,7 +5,7 @@ import { SkeletonLoader } from "../SkeletonLoader";
 import { SuggestionForm } from "../SuggestionForm";
 import { cn } from "../../utils/cn";
 import { darkenHexString } from "../../utils/colorUtils";
-import type { Category, Suggestion } from "../../zero-schema";
+import type { Category, Suggestion } from "../../zero/schema";
 import { useSearchParams } from "@solidjs/router";
 
 export function Column(props: {

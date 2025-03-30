@@ -1,6 +1,6 @@
 import { createSignal, Show } from "solid-js";
 import { Pencil, X, Check } from "lucide-solid";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 
 interface EditableDisplayNameProps {
   displayName: string;

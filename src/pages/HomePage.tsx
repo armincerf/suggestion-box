@@ -3,10 +3,11 @@ import { ErrorBoundary } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
 import { SuggestionFormWithCategoryPicker } from "../components/SuggestionForm";
 import { ErrorFallback } from "../components/ErrorFallback";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 import { cn } from "../utils/cn";
-import { useUser } from "../hooks/useUser";
-import { useActiveSessions } from "../hooks/useSession";
+import { useUser } from "../hooks/data/useUser";
+import { useActiveSessions } from "../hooks/data/useSession";
+import { useCreateSession } from "../hooks/mutations/sessionMutations";
 import { randID } from "../rand";
 
 export function HomePageSkeleton() {
@@ -35,19 +36,17 @@ function HomePage() {
 		return sessions && sessions.length > 0 ? sessions[0] : null;
 	});
 
+	const createSession = useCreateSession();
+
 	if (!z || !userId) return <HomePageSkeleton />;
 
 	const createNewSession = async () => {
 		setIsCreatingSession(true);
 		try {
-			const sessionId = randID();
-			await z.mutate.sessions.insert({
-				id: sessionId,
-				startedBy: userId,
-				users: [userId],
-				updatedAt: Date.now(),
-			});
-			navigate(`/sessions/${sessionId}`);
+			const sessionId = await createSession(userId, []);
+			if (sessionId) {
+				navigate(`/sessions/${sessionId}`);
+			}
 		} catch (error) {
 			console.error("Error creating session:", error);
 			throw error;

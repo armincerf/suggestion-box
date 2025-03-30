@@ -1,4 +1,5 @@
 import { createSignal, createEffect, For } from "solid-js";
+import { useUser } from "../../hooks/data/useUser";
 
 interface RandomAvatarSelectorProps {
   displayName: string;
@@ -6,6 +7,7 @@ interface RandomAvatarSelectorProps {
 }
 
 export function RandomAvatarSelector(props: RandomAvatarSelectorProps) {
+  const { color: userColor } = useUser();
   const [avatars, setAvatars] = createSignal<string[]>([]);
   const [selectedIndex, setSelectedIndex] = createSignal<number>(-1);
   
@@ -24,8 +26,17 @@ export function RandomAvatarSelector(props: RandomAvatarSelectorProps) {
     
     // Generate 9 random avatars
     for (let i = 0; i < 9; i++) {
+      // Use the user's color for the first avatar, random colors for others
       const colors = ['1abc9c', '2ecc71', '3498db', '9b59b6', 'e67e22', 'e74c3c', 'f1c40f', '34495e', '16a085'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      let randomColor: string;
+      
+      if (i === 0) {
+        // Use the user's consistent color for the first avatar
+        randomColor = userColor().replace('#', '');
+      } else {
+        randomColor = colors[Math.floor(Math.random() * colors.length)];
+      }
+      
       const randomSeed = Math.floor(Math.random() * 1000);
       
       newAvatars.push(
@@ -71,7 +82,7 @@ export function RandomAvatarSelector(props: RandomAvatarSelectorProps) {
       <button
         type="button"
         onClick={generateMore}
-        class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-md"
+        class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-md dark:bg-gray-700 dark:hover:bg-gray-600"
       >
         Generate More Options
       </button>

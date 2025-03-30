@@ -1,10 +1,10 @@
 import { Show, createMemo, createSignal } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { SkeletonLoader } from "../SkeletonLoader";
-import { useUser } from "../../hooks/useUser";
+import { useUser } from "../../hooks/data/useUser";
 import { Board } from "../SuggestionBoard/Board";
 import { SessionToolbar } from "./SessionToolbar";
-import { type SortOption, useSuggestions } from "../../hooks/useSuggestions";
+import { type SortOption, useSuggestions } from "../../hooks/data/useSuggestions";
 
 interface SessionBoardProps {
 	sessionId: string;

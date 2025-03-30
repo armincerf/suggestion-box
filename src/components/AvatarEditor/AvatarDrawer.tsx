@@ -1,4 +1,5 @@
 import { createSignal, onMount, For } from "solid-js";
+import { useUser } from "../../hooks/data/useUser";
 
 interface AvatarDrawerProps {
 	onUpdate: (dataUrl: string) => void;
@@ -12,6 +13,7 @@ export function AvatarDrawer(props: AvatarDrawerProps) {
 	const [pixels, setPixels] = createSignal<
 		{ x: number; y: number; color: PenColor }[]
 	>([]);
+	const { color } = useUser();
 
 	let svgRef: SVGSVGElement | undefined;
 	const pixelSize = 10; // Size of each "pixel" for the drawing
@@ -259,12 +261,12 @@ export function AvatarDrawer(props: AvatarDrawerProps) {
 						</clipPath>
 					</defs>
 
-					{/* Blue border circle */}
+					{/* users colour border circle */}
 					<circle
 						cx={canvasSize / 2}
 						cy={canvasSize / 2}
 						r={canvasSize / 2}
-						fill="blue"
+						fill={color()}
 					/>
 
 					{/* White background for drawing area */}
@@ -328,15 +330,14 @@ export function AvatarDrawer(props: AvatarDrawerProps) {
 				<button
 					type="button"
 					onClick={clearCanvas}
-					class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-md"
+					class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-md dark:bg-gray-700 dark:hover:bg-gray-600"
 				>
 					Clear Drawing
 				</button>
 			</div>
 
 			<p class="mt-4 text-sm text-gray-500 text-center">
-				Click or touch and drag to draw with the selected color. Your avatar
-				will be displayed in a circle with a blue border.
+				Click or touch and drag to draw with the selected color.
 			</p>
 		</div>
 	);

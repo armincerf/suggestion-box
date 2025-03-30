@@ -1,6 +1,6 @@
 import { createSignal, Show, createMemo, Suspense } from "solid-js";
 import { ErrorBoundary } from "solid-js";
-import type { Suggestion } from "../zero-schema";
+import type { Suggestion } from "../zero/schema";
 import { getNameFromUserId } from "../nameGenerator";
 import CommentForm from "./CommentForm";
 import { NestedComment } from "./NestedComment";
@@ -9,10 +9,11 @@ import { MAX_COMMENTS_SHOWN } from "../utils/constants";
 import { randID } from "../rand";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { PaginatedList } from "./PaginatedList";
-import { useZero } from "../context/ZeroContext";
+import { useZero } from "../zero/ZeroContext";
 import { ReactionButtons } from "./ReactionButtons";
 import { UserAvatar } from "./UserAvatar";
-import { useRelativeTime } from "../hooks/useRelativeTime";
+import { useRelativeTime } from "../hooks/ui/useRelativeTime";
+import { useEditSuggestion, useAddComment } from "../hooks/mutations/suggestionMutations";
 import { ChevronRight } from "lucide-solid";
 
 export interface SuggestionItemProps {
@@ -31,11 +32,18 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const displayName = () => props.displayName;
 
 	const z = useZero();
+	const editSuggestion = useEditSuggestion();
+	const addComment = useAddComment(() => {
+		// Auto-expand comments when a new comment is added
+		setCommentsExpanded(true);
+	});
 
 	const [showCommentForm, setShowCommentForm] = createSignal(false);
 	const [isEditing, setIsEditing] = createSignal(false);
 	const [editedBody, setEditedBody] = createSignal(suggestion().body);
 	const [isSubmittingEdit, setIsSubmittingEdit] = createSignal(false);
+	const [editError, setEditError] = createSignal<string | null>(null);
+	const [commentError, setCommentError] = createSignal<string | null>(null);
 	const [selectedText, setSelectedText] = createSignal<{
 		start: number;
 		end: number;
@@ -83,29 +91,27 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	};
 
 	const handleAddComment = async (text: string) => {
-		try {
-			const sel = selectedText();
-			await z.mutate.comments.insert({
-				id: randID(),
-				body: text,
-				suggestionId: suggestion().id,
-				selectionStart: sel?.start,
-				selectionEnd: sel?.end,
-				timestamp: Date.now(),
-				userId: z.userID,
-				displayName: displayName(),
-				parentCommentId: null, // Top-level comments have no parent
-				isRootComment: true, // Mark as root comment
-			});
-
+		setCommentError(null);
+		const sel = selectedText();
+		
+		const result = await addComment(
+			text,
+			suggestion().id,
+			z.userID,
+			displayName(),
+			null, // parentCommentId (null for root comments)
+			sel?.start || null,
+			sel?.end || null
+		);
+		
+		if (result.success) {
 			// Clear the form and selection after submitting
 			setShowCommentForm(false);
 			setSelectedText(null);
-			// Auto-expand comments when a new comment is added
-			setCommentsExpanded(true);
-		} catch (error) {
-			console.error("Error adding comment:", error);
-			throw error;
+		} else {
+			setCommentError("Failed to add comment. Please try again.");
+			console.error("Error adding comment:", result.error);
+			throw result.error; // Re-throw to be caught by ErrorBoundary
 		}
 	};
 
@@ -113,16 +119,24 @@ export function SuggestionItem(props: SuggestionItemProps) {
 		if (!editedBody().trim()) return;
 
 		setIsSubmittingEdit(true);
+		setEditError(null);
+		
 		try {
-			await z.mutate.suggestions.update({
-				id: suggestion().id,
-				body: editedBody().trim(),
-				categoryId: suggestion().categoryId, // Keep the same category
-			});
-			setIsEditing(false);
+			const result = await editSuggestion(
+				suggestion().id,
+				editedBody().trim(),
+				suggestion().categoryId // Keep the same category
+			);
+			
+			if (result.success) {
+				setIsEditing(false);
+			} else {
+				setEditError("Failed to update suggestion. Please try again.");
+				console.error("Error updating suggestion:", result.error);
+			}
 		} catch (error) {
 			console.error("Failed to update suggestion:", error);
-			throw error; // Re-throw to be caught by ErrorBoundary
+			setEditError("An unexpected error occurred. Please try again.");
 		} finally {
 			setIsSubmittingEdit(false);
 		}
@@ -136,7 +150,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	// Check if user is the creator of this suggestion
 	const isOwnSuggestion = () => suggestion().userId === userId();
 
-	const relativeDate = useRelativeTime(suggestion().timestamp);
+	const relativeDate = useRelativeTime(() => suggestion().timestamp);
 
 	return (
 		<ErrorBoundary
@@ -194,6 +208,9 @@ export function SuggestionItem(props: SuggestionItemProps) {
 									rows={4}
 									disabled={isSubmittingEdit()}
 								/>
+								{editError() && (
+									<div class="text-red-500 mt-2 text-sm">{editError()}</div>
+								)}
 								<div class="flex justify-end gap-2 mt-2">
 									<button
 										type="button"
@@ -300,6 +317,9 @@ export function SuggestionItem(props: SuggestionItemProps) {
 									id={`comment-form-${suggestion().id}`}
 									displayName={displayName()}
 								/>
+								<Show when={commentError()}>
+									<div class="text-error text-sm mt-2">{commentError()}</div>
+								</Show>
 								<Show when={selectedText()}>
 									<div class="selected-text mt-2 text-sm" aria-live="polite">
 										<strong>Selected text:</strong>{" "}
