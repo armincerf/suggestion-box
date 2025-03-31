@@ -23,24 +23,21 @@ An anonymous suggestion box application built with SolidJS and Zero. This app al
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   npm install
+   bun i
    ```
 
 ### Running the Application
 
-1. Start the database and Zero Cache service:
-   ```bash
-   docker-compose -f docker/docker-compose.yml up -d
-   ```
+1. Start a postgres db at port 5469 (or modify port in package.json)
 
 2. Run the Zero Cache development server:
    ```bash
-   npm run zero-dev
+   bun dev:zero-cache
    ```
 
 3. In a separate terminal, start the frontend development server:
    ```bash
-   npm run dev
+   bun dev:ui
    ```
 
 4. Open your browser and navigate to the URL shown in the terminal (typically http://localhost:5173)
