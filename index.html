@@ -347,9 +347,9 @@
       try {
         // Load main app script and cursor party script in parallel
         await Promise.all([
-          loadScript('/src/main.tsx', 'module'),
           loadScript('https://cursor-party.armincerf.partykit.dev/cursors.js', 'text/javascript') // Assuming this is plain JS
         ]);
+        document.getElementById('userSelection').remove();
         console.log("Main app scripts loaded.");
         // main.tsx will take over rendering and hiding the loader
       } catch (error) {
@@ -400,6 +400,8 @@
       initializeApp();
     }
   </script>
+  <script src="/src/main.tsx" type="module"></script>
+
 </body>
 
 </html>

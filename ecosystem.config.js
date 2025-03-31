@@ -13,7 +13,7 @@ export const apps = [
 	},
 	{
 		name: "frontend",
-		script: `export VITE_PUBLIC_SERVER='https://zero.agileapp3000.com' && export VITE_ZERO_AUTH_SECRET='${prod_secret}' && bun run dev:ui:build && bun run dev:ui:preview`,
+		script: `export VITE_PUBLIC_SERVER='https://zero.agileapp3000.com' && export VITE_ZERO_AUTH_SECRET='${prod_secret}' && bun run prod:ui:build && bun run prod:ui:preview`,
 		env_production: {
 			NODE_ENV: "production",
 			VITE_PUBLIC_SERVER: "https://zero.agileapp3000.com",

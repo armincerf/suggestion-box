@@ -3,7 +3,7 @@ import { type MountableElement, render } from "solid-js/web";
 import { onMount } from "solid-js";
 import App from "./App";
 import "./index.css"; // Keep main app styles
-import { schema } from "./zero/schema";
+import { schema } from "../shared/zero/schema";
 import { createZero } from "@rocicorp/zero/solid";
 // Removed LoadingSpinner import from here
 import { ZeroProvider, type TZero } from "./zero/ZeroContext";
@@ -112,6 +112,7 @@ function AppLoader() {
 			// --- 7. Signal App is Ready ---
 			// Call the global function defined in index.html to hide the loader
 			window.appReady?.();
+			localStorage.removeItem("errorState");
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
@@ -121,11 +122,19 @@ function AppLoader() {
 			// --- 8. Signal App Error ---
 			// Use the global error handler
 			window.appError?.(`Initialization failed: ${errorMessage}`);
+			if (!localStorage.getItem("errorState")) {
+				localStorage.removeItem("userId");
+				localStorage.removeItem("jwt");
+				localStorage.removeItem("color");
+				const idbName = zeroInstance?.idbName;
+				if (idbName) {
+					window.indexedDB.deleteDatabase(idbName);
+				}
 
-			// Optional: Clean up localStorage if init fails badly?
-			// localStorage.removeItem("userId");
-			// localStorage.removeItem("jwt");
-			// localStorage.removeItem("color");
+				window.location.reload();
+			}
+
+			localStorage.setItem("errorState", "true");
 		}
 	});
 

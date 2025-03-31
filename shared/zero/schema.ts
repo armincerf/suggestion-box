@@ -6,7 +6,7 @@ import {
 	type PermissionsConfig,
 	type ExpressionBuilder,
 } from "@rocicorp/zero";
-import * as drizzleSchema from "../db/schema";
+import * as drizzleSchema from "../../src/db/schema";
 
 // Convert Drizzle schema to Zero schema
 export const schema = createZeroSchema(drizzleSchema, {
@@ -26,7 +26,6 @@ export const schema = createZeroSchema(drizzleSchema, {
 			categoryId: true,
 			updatedAt: true,
 			deletedAt: true,
-			actionItems: true,
 		},
 		actionItems: {
 			id: true,
@@ -74,6 +73,41 @@ export const schema = createZeroSchema(drizzleSchema, {
 			users: true,
 			updatedAt: true,
 		},
+		polls: {
+			id: true,
+			sessionId: true,
+			createdByUserId: true,
+			title: true,
+			createdAt: true,
+			endedAt: true,
+		},
+		pollQuestions: {
+			id: true,
+			pollId: true,
+			text: true,
+			order: true,
+		},
+		pollOptions: {
+			id: true,
+			questionId: true,
+			text: true,
+			order: true,
+		},
+		pollVotes: {
+			id: true,
+			optionId: true,
+			userId: true,
+			questionId: true,
+			pollId: true,
+			createdAt: true,
+		},
+		pollAcknowledgements: {
+			id: true,
+			pollId: true,
+			userId: true,
+			sessionId: true,
+			acknowledgedAt: true,
+		},
 	},
 });
 
@@ -109,6 +143,14 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		return cmp("id", authData.sub ?? "");
 	};
 
+	// Allow users to only create polls
+	const allowIfPollCreator = (
+		authData: AuthData,
+		{ cmp }: ExpressionBuilder<Schema, "polls">,
+	) => {
+		return cmp("createdByUserId", authData.sub ?? "");
+	};
+
 	return {
 		suggestions: {
 			row: {
@@ -118,7 +160,7 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 					preMutation: ANYONE_CAN,
 					postMutation: ANYONE_CAN,
 				},
-				// No delete permission for suggestions
+				delete: ANYONE_CAN,
 			},
 		},
 		actionItems: {
@@ -136,25 +178,29 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
-				delete: [allowIfCommentCreator], // Only allow deleting own comments
+				update: {
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
+				},
+				delete: [allowIfCommentCreator],
 			},
 		},
 		reactions: {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
-				update: {
-					preMutation: [allowIfReactionCreator],
-					postMutation: [allowIfReactionCreator],
-				},
-				delete: [allowIfReactionCreator], // Only allow deleting own reactions
+				delete: [allowIfReactionCreator],
 			},
 		},
 		categories: {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
-				// No update or delete permissions for categories
+				update: {
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
+				},
+				delete: ANYONE_CAN,
 			},
 		},
 		users: {
@@ -177,20 +223,93 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 				},
 			},
 		},
+		polls: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+				update: {
+					preMutation: [allowIfPollCreator],
+					postMutation: [allowIfPollCreator],
+				},
+			},
+		},
+		pollQuestions: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+			},
+		},
+		pollOptions: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+			},
+		},
+		pollVotes: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+			},
+		},
+		pollAcknowledgements: {
+			row: {
+				insert: ANYONE_CAN,
+				select: ANYONE_CAN,
+			},
+		},
 	} satisfies PermissionsConfig<AuthData, Schema>;
 });
 
 export type Category = Row<typeof schema.tables.categories>;
 export type Suggestion = Row<typeof schema.tables.suggestions> & {
-	comments: Readonly<Row<typeof schema.tables.comments>[]>;
-	reactions: Readonly<Row<typeof schema.tables.reactions>[]>;
+	comments?: Readonly<Comment[]>;
+	reactions?: Readonly<Reaction[]>;
+	actionItems?: Readonly<ActionItem[]>;
+	category?: Readonly<Category>;
 };
 export type Comment = Row<typeof schema.tables.comments> & {
-	reactions?: Readonly<Row<typeof schema.tables.reactions>[]>;
+	replies?: Readonly<Comment[]>;
+	reactions?: Readonly<Reaction[]>;
+	parentComment?: Readonly<Comment>;
+	suggestion?: Readonly<Suggestion>;
 };
 export type Reaction = Row<typeof schema.tables.reactions>;
-export type User = Row<typeof schema.tables.users>;
-export type Session = Row<typeof schema.tables.sessions>;
+export type User = Row<typeof schema.tables.users> & {
+	pollAcknowledgements?: Readonly<PollAcknowledgement[]>;
+};
+export type Session = Row<typeof schema.tables.sessions> & {
+	user?: Readonly<User>;
+	polls?: Readonly<Poll[]>;
+	pollAcknowledgements?: Readonly<PollAcknowledgement[]>;
+};
 export type ActionItem = Row<typeof schema.tables.actionItems> & {
-	assignedTo: Readonly<Row<typeof schema.tables.users>>;
-}; 
+	assignedTo?: Readonly<User>;
+	suggestion?: Readonly<Suggestion>;
+};
+export type Poll = Row<typeof schema.tables.polls> & {
+	creator?: Readonly<User>;
+	session?: Readonly<Session>;
+	questions?: Readonly<PollQuestion[]>;
+	votes?: Readonly<PollVote[]>;
+	acknowledgements?: Readonly<PollAcknowledgement[]>;
+};
+export type PollQuestion = Row<typeof schema.tables.pollQuestions> & {
+	poll?: Readonly<Poll>;
+	options?: Readonly<PollOption[]>;
+	votes?: Readonly<PollVote[]>;
+};
+export type PollOption = Row<typeof schema.tables.pollOptions> & {
+	question?: Readonly<PollQuestion>;
+	votes?: Readonly<PollVote[]>;
+};
+export type PollVote = Row<typeof schema.tables.pollVotes> & {
+	user?: Readonly<User>;
+	option?: Readonly<PollOption>;
+	question?: Readonly<PollQuestion>;
+	poll?: Readonly<Poll>;
+};
+export type PollAcknowledgement = Row<typeof schema.tables.pollAcknowledgements> & {
+	user?: Readonly<User>;
+	poll?: Readonly<Poll>;
+	session?: Readonly<Session>;
+};
