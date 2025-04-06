@@ -1,4 +1,11 @@
-import { ErrorBoundary, Suspense } from "solid-js";
+import {
+	type Accessor,
+	ErrorBoundary,
+	Suspense,
+	createEffect,
+	createMemo,
+	For,
+} from "solid-js";
 import { ErrorFallback } from "./ErrorFallback";
 import { COMMON_EMOJIS } from "../utils/constants";
 import { Index } from "solid-js";
@@ -17,8 +24,13 @@ function ReactionButton(props: {
 	count: number;
 	isReacted: boolean;
 	onToggle: (emoji: string) => Promise<void>;
+	readOnly?: boolean;
 }) {
-	const handleClick = () => props.onToggle(props.emoji);
+	const handleClick = () => {
+		if (!props.readOnly) {
+			props.onToggle(props.emoji);
+		}
+	};
 
 	return (
 		<button
@@ -31,6 +43,7 @@ function ReactionButton(props: {
 			onClick={handleClick}
 			aria-label={`${props.emoji} reaction (${props.count})`}
 			aria-pressed={props.isReacted}
+			disabled={props.readOnly}
 		>
 			<span aria-hidden="true" class="mr-1">
 				{props.emoji}
@@ -41,10 +54,42 @@ function ReactionButton(props: {
 }
 
 export function ReactionButtons(props: {
-	entity: Suggestion | Comment;
+	entity: Accessor<Suggestion | Comment>;
+	readOnly?: boolean;
 }) {
 	const z = useZero();
-	const entity = () => props.entity;
+	const entity = () => props.entity();
+
+	const reactionSummary = createMemo(() => {
+		const summary: Record<string, { count: number; isReacted: boolean }> = {};
+		const reactions = entity().reactions || [];
+		const currentUserId = z.userID;
+
+		for (const emoji of COMMON_EMOJIS) {
+			summary[emoji] = { count: 0, isReacted: false };
+		}
+
+		for (const reaction of reactions) {
+			if (summary[reaction.emoji]) {
+				summary[reaction.emoji].count++;
+				if (reaction.userId === currentUserId) {
+					summary[reaction.emoji].isReacted = true;
+				}
+			}
+		}
+
+		return summary;
+	});
+
+	const emojiData = createMemo(() => {
+		const summary = reactionSummary();
+		return COMMON_EMOJIS.map(emoji => ({
+			emoji,
+			count: summary[emoji].count,
+			isReacted: summary[emoji].isReacted
+		}));
+	});
+	
 	const toggleReaction = async (emoji: string) => {
 		const existingReactionId = entity().reactions?.find(
 			(r) =>
@@ -78,7 +123,6 @@ export function ReactionButtons(props: {
 			throw error; // Re-throw to be caught by ErrorBoundary
 		}
 	};
-
 	return (
 		<ErrorBoundary
 			fallback={(error, reset) => (
@@ -98,23 +142,17 @@ export function ReactionButtons(props: {
 				}
 			>
 				<div class="flex flex-wrap gap-2">
-					<Index each={COMMON_EMOJIS}>
-						{(emoji) => (
+					<For each={emojiData()}>
+						{(item) => (
 							<ReactionButton
-								emoji={emoji()}
-								count={
-									entity().reactions?.filter((r) => r.emoji === emoji())
-										.length || 0
-								}
-								isReacted={
-									entity().reactions?.find(
-										(r) => r.emoji === emoji() && r.userId === z.userID,
-									) !== undefined
-								}
+								emoji={item.emoji}
+								count={item.count}
+								isReacted={item.isReacted}
 								onToggle={toggleReaction}
+								readOnly={props.readOnly ?? false}
 							/>
 						)}
-					</Index>
+					</For>
 				</div>
 			</Suspense>
 		</ErrorBoundary>

@@ -1,19 +1,12 @@
 import { lazy, ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { type RouteDefinition, Router } from "@solidjs/router";
+import { ConfirmProvider } from "./contexts/ConfirmContext";
 
 const routes = [
 	{
 		path: "/",
 		component: lazy(() => import("./pages/HomePage")),
-	},
-	{
-		path: "/feedback",
-		component: lazy(() =>
-			import("./pages/FeedbackPage").then((module) => ({
-				default: module.FeedbackPage,
-			})),
-		),
 	},
 	{
 		path: "/sessions/:sessionId",
@@ -48,7 +41,9 @@ function App() {
 				/>
 			)}
 		>
-			<Router>{routes}</Router>
+			<ConfirmProvider>
+				<Router>{routes}</Router>
+			</ConfirmProvider>
 		</ErrorBoundary>
 	);
 }

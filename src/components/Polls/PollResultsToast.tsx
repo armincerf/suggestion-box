@@ -1,13 +1,9 @@
-import { Show, For } from "solid-js";
-import type { PollResultsData } from "../../hooks/data/usePolls";
-import { PollResultsDisplay } from "./PollResultsDisplay";
-import { cn } from "../../utils/cn";
+import { PollResults } from "./PollResults";
 
 interface PollResultsToastProps {
 	pollId: string;
 	pollTitle: string;
-	results: PollResultsData | null;
-	onClose: () => void; // Parent handles logic via this callback
+	onClose: () => void;
 }
 
 export function PollResultsToast(props: PollResultsToastProps) {
@@ -41,29 +37,9 @@ export function PollResultsToast(props: PollResultsToastProps) {
 				</button>
 			</div>
 
-			<Show
-				when={props.results}
-				fallback={
-					<p class="text-sm dark:text-gray-300">Loading results...</p>
-				}
-			>
-				{(res) => (
-					<Show when={res} fallback={<p class="text-sm dark:text-gray-300">No results available.</p>}>
-						{(actualResults) => (
-							<div class="space-y-3 max-h-60 overflow-y-auto pr-2 -mr-2">
-								<For each={Object.entries(actualResults)}>
-									{([questionId, questionResult]) => (
-										<PollResultsDisplay
-											questionText={questionResult.questionText}
-											optionsResults={questionResult.options}
-										/>
-									)}
-								</For>
-							</div>
-						)}
-					</Show>
-				)}
-			</Show>
+			<div class="space-y-3 max-h-60 overflow-y-auto pr-2 -mr-2">
+				<PollResults pollId={props.pollId} />
+			</div>
 		</div>
 	);
 }

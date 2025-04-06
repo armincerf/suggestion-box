@@ -189,6 +189,10 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			row: {
 				insert: ANYONE_CAN,
 				select: ANYONE_CAN,
+				update: {
+					preMutation: ANYONE_CAN,
+					postMutation: ANYONE_CAN,
+				},
 				delete: [allowIfReactionCreator],
 			},
 		},
@@ -313,3 +317,5 @@ export type PollAcknowledgement = Row<typeof schema.tables.pollAcknowledgements>
 	poll?: Readonly<Poll>;
 	session?: Readonly<Session>;
 };
+
+export type ReactionEntityType = "suggestion" | "comment";

@@ -5,8 +5,10 @@ import {
 	Match,
 	Show,
 	createMemo,
+	onCleanup,
+	For,
 } from "solid-js";
-import { useParams, useNavigate } from "@solidjs/router";
+import { useParams, useNavigate, useSearchParams } from "@solidjs/router";
 import { useZero } from "../zero/ZeroContext";
 import { useUser } from "../hooks/data/useUser";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -19,9 +21,19 @@ import {
 	useSuggestionsToReview,
 } from "../hooks/data/useSession";
 import { useEnsureSessionMembership } from "../hooks/data/useEnsureSessionMembership";
-import type { User } from "../zero/schema";
+import type { User, Poll } from "../../shared/zero/schema";
 import { createLogger } from "../hyperdx-logger";
+import {
+	useActivePoll,
+	useEndedSessionPolls,
+	useMySessionPollAcknowledgements,
+} from "../hooks/data/usePolls";
+import { ActivePollModal } from "../components/Polls/ActivePollModal";
+import { PollResultsToast } from "../components/Polls/PollResultsToast";
+import { useAcknowledgePollResults } from "../hooks/mutations/pollMutations";
+
 const logger = createLogger("suggestion-box:SessionPage");
+const HIGHLIGHT_DURATION = 5500; // ms for highlight effect
 
 export function SessionPage() {
 	const params = useParams<{ sessionId: string }>();
@@ -45,6 +57,39 @@ export function SessionPage() {
 		startedAt,
 	);
 	const currentSuggestion = createMemo(() => suggestionsToReview()[0]);
+
+	// Active poll management
+	const [activePoll] = useActivePoll(() => params.sessionId);
+	const [showPollModal, setShowPollModal] = createSignal(true);
+
+	// Poll results toast management
+	const [endedPolls] = useEndedSessionPolls(() => params.sessionId);
+	const [acknowledgements] = useMySessionPollAcknowledgements(
+		() => userId,
+		() => params.sessionId,
+	);
+	const [pollsToShowResultsFor, setPollsToShowResultsFor] = createSignal<
+		Poll[]
+	>([]);
+	const acknowledgePollResults = useAcknowledgePollResults();
+
+	// Determine which polls need to show results
+	createEffect(() => {
+		const polls = endedPolls();
+		const acks = acknowledgements();
+
+		if (!polls || !acks || !userId) return;
+
+		// Create a set of acknowledged poll IDs for quick lookup
+		const acknowledgedPollIds = new Set(acks.map((ack) => ack.pollId));
+
+		// Find polls that haven't been acknowledged
+		const unacknowledgedPolls = polls.filter(
+			(poll) => !acknowledgedPollIds.has(poll.id),
+		);
+
+		setPollsToShowResultsFor(unacknowledgedPolls);
+	});
 
 	// Filter users to only those in the session
 	const sessionUsers = createMemo<User[]>(() => {
@@ -74,7 +119,7 @@ export function SessionPage() {
 			setError("Session not found");
 		}
 	});
-	
+
 	const { endSession } = useSessionMutations();
 
 	// End the session
@@ -95,6 +140,28 @@ export function SessionPage() {
 		}
 	};
 
+	// Handle acknowledging a poll result
+	const handleAcknowledge = async (pollId: string) => {
+		if (!userId || !params.sessionId) return;
+
+		try {
+			await acknowledgePollResults(pollId, userId, params.sessionId);
+
+			// Optimistically update UI by removing the poll from display
+			setPollsToShowResultsFor((prev) => prev.filter((p) => p.id !== pollId));
+		} catch (error) {
+			console.error("Failed to acknowledge poll results", error);
+		}
+	};
+
+	const handlePollEnded = () => {
+		setShowPollModal(false);
+	};
+
+	const handleReopenPollModal = (dismissed: boolean) => {
+		setShowPollModal(!dismissed);
+	};
+
 	if (error()) {
 		return (
 			<div class="container mx-auto p-6 text-center">
@@ -111,15 +178,6 @@ export function SessionPage() {
 			</div>
 		);
 	}
-
-	logger.debug("Session page state", {
-		status: status(),
-		isLoading: isLoading(),
-		isSessionStarted: isSessionStarted(),
-		isSessionEnded: isSessionEnded(),
-		suggestionsCount: suggestionsToReview().length,
-		sessionId: params.sessionId,
-	});
 
 	return (
 		<div class="dark:bg-base-900">
@@ -146,7 +204,17 @@ export function SessionPage() {
 						isSessionEnded={isSessionEnded()}
 						isSessionStarted={isSessionStarted()}
 						onEndSession={handleEndSession}
+						isPollActive={!!activePoll()}
+						onReopenPollModal={handleReopenPollModal}
 					/>
+					<Show when={!!activePoll() && showPollModal()}>
+						<ActivePollModal
+							poll={activePoll()}
+							isOpen={showPollModal()}
+							onClose={() => setShowPollModal(false)}
+							onPollEnded={handlePollEnded}
+						/>
+					</Show>
 				</Match>
 
 				{/* Active Session - Suggestion Review */}
@@ -163,6 +231,19 @@ export function SessionPage() {
 					</Show>
 				</Match>
 			</Switch>
+
+			{/* Toast Container for Poll Results */}
+			<div class="fixed bottom-4 right-4 w-full max-w-sm space-y-2 z-[100]">
+				<For each={pollsToShowResultsFor()}>
+					{(poll) => (
+						<PollResultsToast
+							pollId={poll.id}
+							pollTitle={poll.title || "Poll Results"}
+							onClose={() => handleAcknowledge(poll.id)}
+						/>
+					)}
+				</For>
+			</div>
 		</div>
 	);
 }

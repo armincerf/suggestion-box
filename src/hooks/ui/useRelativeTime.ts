@@ -32,7 +32,7 @@ function formatRelativeTimeShort(timestamp: number | Date, isSmallScreen: boolea
 }
 
 // Hook using SolidJS primitives
-export function useRelativeTime(timestamp: Accessor<number | Date | undefined>, isSmallScreen: Accessor<boolean> = () => false) {
+export function useRelativeTime(timestamp: Accessor<number | Date | undefined | null>, isSmallScreen: Accessor<boolean> = () => false) {
     const [relativeTime, setRelativeTime] = createSignal<string>("");
     let intervalId: ReturnType<typeof setInterval> | undefined;
 

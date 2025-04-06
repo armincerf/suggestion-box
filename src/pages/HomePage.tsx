@@ -28,10 +28,10 @@ function HomePage() {
 	const { displayName, userId } = useUser();
 	const navigate = useNavigate();
 	const [isCreatingSession, setIsCreatingSession] = createSignal(false);
-	
+
 	// Get active session using the hook
 	const [activeSessions] = useActiveSessions();
-	
+
 	// Get the most recent active session (first one in the sorted results)
 	const activeSession = createMemo(() => {
 		const sessions = activeSessions();
@@ -45,9 +45,9 @@ function HomePage() {
 	const createNewSession = async () => {
 		setIsCreatingSession(true);
 		try {
-			const sessionId = await createSession(userId, []);
-			if (sessionId) {
-				navigate(`/sessions/${sessionId}`);
+			const session = await createSession(userId, []);
+			if (session.success && session.data) {
+				navigate(`/sessions/${session.data}`);
 			}
 		} catch (error) {
 			logger.error("Error creating session:", error);
@@ -109,12 +109,14 @@ function HomePage() {
 												isCreatingSession() && "loading",
 											)}
 										>
-											{isCreatingSession() ? "Creating..." : "Create New Session"}
+											{isCreatingSession()
+												? "Creating..."
+												: "Create New Session"}
 										</button>
 									}
 								>
-									<A 
-										href={`/sessions/${activeSession()?.id}`} 
+									<A
+										href={`/sessions/${activeSession()?.id}`}
 										class="btn btn-primary w-full"
 									>
 										Join Active Session

@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
+import devtools from 'solid-devtools/vite'
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
 
@@ -17,6 +18,9 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		devtools({
+			autoname: true,
+		}),
 		solid(),
 		tailwindcss(),
 		visualizer(),

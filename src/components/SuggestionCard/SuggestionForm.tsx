@@ -15,9 +15,6 @@ interface SuggestionFormProps {
 	autoFocus?: boolean;
 }
 
-/**
- * Component for submitting a new suggestion
- */
 export function SuggestionForm(props: SuggestionFormProps) {
 	const displayName = () => props.displayName;
 	const onSubmitError = () => props.onSubmitError;
@@ -25,10 +22,8 @@ export function SuggestionForm(props: SuggestionFormProps) {
 	const z = useZero();
 	const [submitError, setSubmitError] = createSignal<string | null>(null);
 
-	// Use the callback from the mutation hook to handle success
 	const createSuggestion = useCreateSuggestion();
 
-	// Use the provided category if available; otherwise default to "continue"
 	const selectedCategory = () => props.categoryID ?? "continue";
 
 	const handleSubmit = async (text: string) => {
@@ -38,9 +33,11 @@ export function SuggestionForm(props: SuggestionFormProps) {
 
 		try {
 			const result = await createSuggestion(text.trim(), selectedCategory());
+			logger.info(
+				`Suggestion submitted for category ${selectedCategory()}. Result success: ${result?.success}, New Suggestion ID (if success): ${result?.data}`,
+			);
 
-			if (!result.success) {
-				// Handle error case
+			if (!result?.success) {
 				setSubmitError("Failed to submit suggestion. Please try again.");
 				onSubmitError();
 			}
@@ -78,9 +75,6 @@ interface CategoryPickerProps {
 	selectedCategoryId?: string;
 }
 
-/**
- * Component for selecting a category using DaisyUI radio buttons
- */
 function CategoryPicker(props: CategoryPickerProps) {
 	const [categories] = useCategories();
 

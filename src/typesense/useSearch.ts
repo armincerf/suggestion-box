@@ -35,6 +35,14 @@ export interface SearchResultHit {
 			{ snippet?: string; snippets?: string[] }
 		>
 	> | null;
+	// Add fields needed by SuggestionItem/CommentItem preview if possible
+	// These should ideally come directly from Typesense 'include_fields'
+	// If not possible, they will be null/undefined in the preview
+	// For SuggestionItem Preview:
+	// categoryName?: string | null; // Optional: Useful for display if indexed
+	// For CommentItem Preview (inside SuggestionItem):
+	parentCommentId?: string | null; // Added: Context for comment preview
+	// suggestionBody?: string | null; // Optional: Context for comment preview
 }
 
 // Structure for the hook's state
@@ -74,7 +82,6 @@ export function useSearch(): UseSearchResult {
 			const errMsg =
 				"Typesense client is not configured or available. Check environment variables (VITE_TYPESENSE_*) and client initialization.";
 			setError(errMsg);
-			console.error("[useSearch]", errMsg);
 			setIsLoading(false); // Ensure loading state is reset
 			return;
 		}
@@ -97,8 +104,7 @@ export function useSearch(): UseSearchResult {
 		const searches: MultiSearchRequestsSchema["searches"] = [];
 		const isSemantic = useSemantic();
 
-		// Base parameters common to most searches
-		// Specifics like query_by, include_fields, vector_query are set per-collection
+		// Base parameters
 		const baseSearchParams: Omit<
 			SearchParams,
 			"q" | "query_by" | "include_fields" | "vector_query"
@@ -107,7 +113,7 @@ export function useSearch(): UseSearchResult {
 			highlight_start_tag: "<mark>",
 			highlight_end_tag: "</mark>",
 			num_typos: 2, // Allow typos
-			limit: 10, // Max results per collection type
+			limit: 5, // Max results per collection type
 		};
 
 		// --- Suggestion Search ---
@@ -117,37 +123,37 @@ export function useSearch(): UseSearchResult {
 				: "body,displayName";
 			const suggestionVectorParam = isSemantic
 				? { vector_query: "embedding:([], k: 10)" }
-				: {}; // k=neighbours
+				: {};
+			// Include necessary fields for preview
 			const suggestionIncludeFields =
-				"id,body,userId,displayName,timestamp,categoryId"; // Fields existing in suggestion schema
+				"id,body,userId,displayName,timestamp,categoryId"; // Add categoryName here if indexed
 
 			searches.push({
-				collection: suggestionsCollection, // Use name from imported client config
+				collection: suggestionsCollection,
 				...baseSearchParams,
-				q: currentQuery, // Query text
+				q: currentQuery,
 				query_by: suggestionQueryBy,
 				include_fields: suggestionIncludeFields,
-				...suggestionVectorParam, // Add vector params if semantic
+				...suggestionVectorParam,
 			});
 		}
 
 		// --- Comment Search ---
 		if (searchComments()) {
-			// Assuming comments collection also has 'embedding' field if semantic enabled
 			const commentQueryBy = isSemantic
 				? "body,embedding,displayName"
 				: "body,displayName";
 			const commentVectorParam = isSemantic
 				? { vector_query: "embedding:([], k: 10)" }
 				: {};
-			// Fields existing in comment schema (note: includes suggestionId)
+			// Include necessary fields for preview
 			const commentIncludeFields =
-				"id,body,userId,displayName,timestamp,suggestionId";
+				"id,body,userId,displayName,timestamp,suggestionId,parentCommentId"; // Add suggestionBody, categoryId, categoryName if indexed
 
 			searches.push({
-				collection: commentsCollection, // Use name from imported client config
+				collection: commentsCollection,
 				...baseSearchParams,
-				q: currentQuery, // Query text
+				q: currentQuery,
 				query_by: commentQueryBy,
 				include_fields: commentIncludeFields,
 				...commentVectorParam,
@@ -163,11 +169,6 @@ export function useSearch(): UseSearchResult {
 
 		// --- Execute Typesense API Call ---
 		try {
-			console.log(
-				"[useSearch] Performing search with payload:",
-				JSON.stringify({ searches }, null, 2),
-			);
-
 			// Use any type to bypass complex type issues with Typesense types
 			// We're using any here because the Typesense types are complex and would require
 			// extensive custom type definitions to work correctly with our multi-search implementation
@@ -175,8 +176,6 @@ export function useSearch(): UseSearchResult {
 				{ searches }, // The main payload
 				{}, // Common search params - leave empty as we defined per search
 			);
-
-			console.log("[useSearch] Received results:", multiSearchResult);
 
 			// --- Process Successful Results ---
 			const combinedHits: SearchResultHit[] = [];
@@ -200,9 +199,6 @@ export function useSearch(): UseSearchResult {
 							"error" in typedResultSet &&
 							typedResultSet.error
 						) {
-							console.error(
-								`[useSearch] Error in search for ${collectionName}: ${typedResultSet.error}`,
-							);
 							setError(
 								(prev) =>
 									`${prev ? `${prev}\n` : ""}Error in ${collectionName}: ${typedResultSet.error}`,
@@ -252,6 +248,7 @@ export function useSearch(): UseSearchResult {
 									},
 								);
 
+								// Map document fields to SearchResultHit, including new ones
 								combinedHits.push({
 									id: String(doc.id || ""),
 									type:
@@ -263,16 +260,16 @@ export function useSearch(): UseSearchResult {
 									displayName: doc.displayName ? String(doc.displayName) : null,
 									timestamp:
 										typeof doc.timestamp === "number" ? doc.timestamp : null,
-									// Add collection-specific fields
-									...(collectionName === suggestionsCollection && {
-										categoryId: doc.categoryId ? String(doc.categoryId) : null,
-									}),
-									...(collectionName === commentsCollection && {
-										suggestionId: doc.suggestionId
-											? String(doc.suggestionId)
-											: null,
-									}),
-									// Add highlight data if available
+									// Add collection-specific fields (ensure these are in include_fields above)
+									categoryId: doc.categoryId ? String(doc.categoryId) : null,
+									suggestionId: doc.suggestionId
+										? String(doc.suggestionId)
+										: null,
+									parentCommentId: doc.parentCommentId
+										? String(doc.parentCommentId)
+										: null,
+									// categoryName: doc.categoryName ? String(doc.categoryName) : null, // If indexed
+									// suggestionBody: doc.suggestionBody ? String(doc.suggestionBody) : null, // If indexed
 									_highlight:
 										Object.keys(highlight).length > 0 ? highlight : null,
 								});
@@ -290,7 +287,6 @@ export function useSearch(): UseSearchResult {
 			}
 		} catch (err) {
 			// Catch errors from the overall multiSearch API call (e.g., network, auth)
-			console.error("[useSearch] API call failed:", err);
 			let errorMessage = "Search request failed.";
 			if (typeof err === "object" && err !== null) {
 				if ("message" in err) {
@@ -299,7 +295,6 @@ export function useSearch(): UseSearchResult {
 				if ("httpStatus" in err) {
 					errorMessage = `Typesense error (HTTP ${err.httpStatus}): ${errorMessage}`;
 				}
-				// Log the full error for detailed debugging in console
 				console.error("Full API call error object:", err);
 			}
 			setError(errorMessage);

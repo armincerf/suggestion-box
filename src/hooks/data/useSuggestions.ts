@@ -17,13 +17,22 @@ function calculateRating(reactions: Readonly<Reaction[]> | undefined): number {
 	}, 0);
 }
 
-export const suggestionsWithRelationsQuery = (z: TZero) =>
+export const suggestionsWithRelationsQuery = (z: TZero, limit = 100) =>
 	z.query.suggestions
 		.where("deletedAt", "IS", null)
 		.related("comments", (comments) => comments.related("reactions"))
-		.related("reactions");
+		.related("reactions")
+		.limit(limit);
 
-export function useSuggestions(skipFilters?: boolean) {
+export function useSuggestions({
+	limit,
+	categoryId,
+	skipFilters,
+}: {
+	limit: Accessor<number>;
+	categoryId: string;
+	skipFilters?: boolean;
+}) {
 	const z = useZero();
 	const [searchParams] = useSearchParams();
 
@@ -36,8 +45,16 @@ export function useSuggestions(skipFilters?: boolean) {
 	const sort = createMemo(() => searchParams.sort as SortOption | undefined);
 
 	const filteredQuery = createMemo(() => {
-		let q = suggestionsWithRelationsQuery(z);
+		let q = suggestionsWithRelationsQuery(z, limit());
 		const selectedUserIds = userIds();
+
+		if (categoryId !== 'all') {
+			q = q.where(
+				"categoryId",
+				"=",
+				categoryId,
+			);
+		}
 
 		if (!skipFilters && selectedUserIds.length > 0) {
 			q = q.where(({ cmp, or }) => {

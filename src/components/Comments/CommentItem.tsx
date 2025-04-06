@@ -1,7 +1,6 @@
 import {
 	createSignal,
 	Show,
-	For,
 	createMemo,
 	type Accessor,
 	Index,
@@ -11,7 +10,6 @@ import type { Comment } from "../../../shared/zero/schema";
 import { getNameFromUserId } from "../../nameGenerator";
 import CommentForm from "./CommentForm";
 import { ErrorFallback } from "../ErrorFallback";
-import { useZero } from "../../zero/ZeroContext";
 import { useUser } from "../../hooks/data/useUser";
 import { ReactionButtons } from "../ReactionButtons";
 import { UserAvatar } from "../UserAvatar";
@@ -41,7 +39,6 @@ export interface CommentItemProps {
  * Component for displaying a comment, handling replies recursively.
  */
 export function CommentItem(props: CommentItemProps) {
-	const z = useZero();
 	const [showReplyForm, setShowReplyForm] = createSignal(false);
 	const [isDeleting, setIsDeleting] = createSignal(false);
 	const [replyError, setReplyError] = createSignal<string | null>(null);
@@ -78,12 +75,12 @@ export function CommentItem(props: CommentItemProps) {
 			null, // selectionEnd
 		);
 
-		if (result.success) {
+		if (result?.success) {
 			setShowReplyForm(false);
 		} else {
 			setReplyError("Failed to add reply. Please try again.");
-			logger.error("Error adding reply:", result.error);
-			throw result.error; // Re-throw to be caught by ErrorBoundary
+			logger.error("Error adding reply:", result?.error);
+			throw result?.error; // Re-throw to be caught by ErrorBoundary
 		}
 	};
 
@@ -138,7 +135,7 @@ export function CommentItem(props: CommentItemProps) {
 			)}
 		>
 			<div
-				class="flex space-x-3 py-2 comment-item"
+				class="flex space-x-3 py-2 comment-item items-start"
 				id={commentIdStr}
 				aria-labelledby={`${commentIdStr}-body`}
 			>
@@ -186,7 +183,7 @@ export function CommentItem(props: CommentItemProps) {
 					</div>
 
 					<div class="flex items-center space-x-2 text-sm">
-						<ReactionButtons entity={props.comment()} />
+						<ReactionButtons entity={props.comment} />
 						<button
 							type="button"
 							id={replyButtonId}

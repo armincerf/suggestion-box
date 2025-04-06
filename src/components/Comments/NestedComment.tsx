@@ -8,6 +8,8 @@ interface NestedCommentProps {
 	maxDepth: number; // Max depth before "View Thread"
 	maxVisibleDirectReplies: number; // How many replies to show initially before "Show More"
 	onViewThread: (commentId: string) => void; // Add this prop
+	readOnly?: boolean; // Add prop
+	highlightCommentId?: string | undefined; // Add prop
 }
 
 /**

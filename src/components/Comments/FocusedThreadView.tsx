@@ -1,11 +1,4 @@
-import {
-	Show,
-	For,
-	Suspense,
-	createMemo,
-	type Accessor,
-	Index,
-} from "solid-js";
+import { Show, Suspense, createMemo, type Accessor, Index } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { useCommentReplies } from "../../hooks/data/useComments";
 import { useQuery } from "@rocicorp/zero/solid";
@@ -32,6 +25,8 @@ interface FocusedThreadViewProps {
 	onViewThread: (commentId: string) => void;
 	maxDepth: number;
 	maxVisibleDirectReplies: number;
+	readOnly?: boolean;
+	highlightCommentId?: string | undefined;
 }
 
 /**

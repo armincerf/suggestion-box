@@ -10,36 +10,11 @@ interface SuggestionBodyProps {
 	onCancelEdit: () => void;
 	isSubmittingEdit: boolean;
 	editError: string | null;
-	onTextSelection: (start: number, end: number) => void;
-	clearTextSelection: () => void;
-	authorDisplayName: string; // For screen reader title
+	authorDisplayName: string;
+	readOnly?: boolean;
 }
 
 export function SuggestionBody(props: SuggestionBodyProps) {
-	const handleTextSelection = () => {
-		const selection = window.getSelection();
-		if (selection && selection.rangeCount > 0) {
-			const range = selection.getRangeAt(0);
-			const container = document.getElementById(props.suggestionId);
-			if (
-				container?.contains(range.startContainer) &&
-				container.contains(range.endContainer) &&
-				!range.collapsed
-			) {
-				const preSelectionRange = document.createRange();
-				preSelectionRange.selectNodeContents(container);
-				preSelectionRange.setEnd(range.startContainer, range.startOffset);
-				const start = preSelectionRange.toString().length;
-				const end = start + range.toString().length;
-				props.onTextSelection(start, end);
-			} else {
-				props.clearTextSelection();
-			}
-		} else {
-			props.clearTextSelection();
-		}
-	};
-
 	return (
 		<>
 			<div class="sr-only" id={`${props.suggestionId}-title`}>
@@ -84,10 +59,8 @@ export function SuggestionBody(props: SuggestionBodyProps) {
 				<section
 					id={props.suggestionId}
 					class="suggestion-body mt-1 text-sm prose prose-sm max-w-none"
-					onMouseUp={handleTextSelection}
 					aria-label="Suggestion content"
 				>
-					{/* Use innerHTML or equivalent if markdown/rich text is needed, otherwise direct text is safer */}
 					{props.initialBody}
 				</section>
 			</Show>

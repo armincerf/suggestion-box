@@ -1,14 +1,15 @@
 /* @refresh reload */
 import { type MountableElement, render } from "solid-js/web";
-import { onMount } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 import App from "./App";
 import "./index.css"; // Keep main app styles
 import { schema } from "../shared/zero/schema";
 import { createZero } from "@rocicorp/zero/solid";
-// Removed LoadingSpinner import from here
 import { ZeroProvider, type TZero } from "./zero/ZeroContext";
 import { createLogger } from "./hyperdx-logger";
-const logger = createLogger("suggestion-box:main");
+import { UserSelection } from "./components/UserSelection";
+import { AppLoading } from "./components/AppLoading";
+import "solid-devtools";
 
 // Extend window type for our global functions (optional but good practice)
 declare global {
@@ -18,50 +19,79 @@ declare global {
 	}
 }
 
+// Root element is now managed by our SolidJS code
 const root = document.getElementById("root");
 if (!root) {
-	// Error handling here is tricky as the app hasn't loaded yet.
-	// The index.html loader should ideally handle this case.
 	console.error("Fatal: Root element not found");
-	window.appError?.("Application structure missing."); // Attempt to use global error handler
 	throw new Error("Root element not found");
 }
 
-function AppLoader() {
-	// No internal isLoading or zeroInstance state needed for rendering control here
-	// We rely on index.html's loader until the app is fully ready.
+// Types for our application state
+type AppState =
+	| { status: "loading" }
+	| { status: "selecting_user" }
+	| { status: "initializing"; userId: string; jwt: string; color: string }
+	| { status: "ready"; zero: TZero }
+	| { status: "error"; message: string };
+
+function MainApp() {
+	const [appState, setAppState] = createSignal<AppState>({ status: "loading" });
+	const logger = createLogger("suggestion-box:main");
 
 	onMount(async () => {
-		console.log("AppLoader mounted. Initializing Zero...");
-		let zeroInstance: TZero | null = null; // Keep local ref for setup
+		console.log("MainApp mounted. Checking authentication...");
 
 		try {
-			// --- 1. Get Credentials ---
+			// Check if user is already authenticated
 			const encodedJWT = localStorage.getItem("jwt");
 			const userId = localStorage.getItem("userId");
-			const color = localStorage.getItem("color"); // Get color
+			const color = localStorage.getItem("color");
 
-			if (!encodedJWT || !userId || !color) {
-				// This should ideally not happen if index.html logic is correct
-				console.error("Missing auth details in localStorage.");
-				throw new Error(
-					"Authentication details missing. Please select a user again.",
-				);
+			if (encodedJWT && userId && color) {
+				// User already authenticated, initialize app
+				console.log(`Credentials found for userId: ${userId}`);
+				setAppState({ status: "initializing", userId, jwt: encodedJWT, color });
+				await initializeApp(userId, encodedJWT, color);
+			} else {
+				// No credentials found, show user selection
+				console.log("No credentials found, showing user selection");
+				setAppState({ status: "selecting_user" });
 			}
-			console.log(`Credentials loaded for userId: ${userId}`);
+		} catch (error) {
+			handleError(error);
+		}
+	});
 
-			// --- 2. Initialize Zero ---
+	// Function to handle user selection from the UserSelection component
+	const handleUserSelected = async (
+		userId: string,
+		color: string,
+		jwt: string,
+	) => {
+		try {
+			console.log(`User selected: ${userId}`);
+			setAppState({ status: "initializing", userId, jwt, color });
+			await initializeApp(userId, jwt, color);
+		} catch (error) {
+			handleError(error);
+		}
+	};
+
+	// Initialize the app with the selected user
+	const initializeApp = async (userId: string, jwt: string, color: string) => {
+		try {
+			console.log("Initializing Zero...");
+
+			// Initialize Zero client
 			const z = createZero({
 				userID: userId,
-				auth: () => encodedJWT, // Use the retrieved JWT
+				auth: () => jwt,
 				server: import.meta.env.VITE_PUBLIC_SERVER,
 				schema,
 				kvStore: "idb", // Use IndexedDB for persistence
 			});
-			zeroInstance = z; // Assign to local ref
-			console.log("Zero client initialized.");
 
-			// --- 3. Start Preloading Data Immediately ---
+			// Start preloading data
 			console.log("Starting data preload...");
 			z.query.users.preload();
 			z.query.sessions.preload();
@@ -69,81 +99,100 @@ function AppLoader() {
 			z.query.comments.preload();
 			z.query.reactions.preload();
 			z.query.categories.preload();
-			console.log("Preload commands issued.");
 
-			// --- 4. Check/Create User Record ---
+			// Check/Create user record
 			console.log("Checking/Creating user record...");
-			const avatarUrl = `https://api.dicebear.com/6.x/bottts/svg?seed=${userId}`; // Consistent avatar
-
-			let finalUserName = userId; // Default to userId
-			let finalAvatarUrl = avatarUrl;
-
+			// @ts-expect-error - not sure why this is erroring
 			await z.mutate.users.upsert({
 				id: userId,
-				displayName: userId, // Use userId as initial display name
-				avatarUrl: avatarUrl,
-				color: color, // Use the color from localStorage
-				createdAt: Date.now(), // won't apply on update thanks to timestampProtection.ts
+				displayName: userId,
+				color: color,
+				createdAt: Date.now(),
 				updatedAt: Date.now(),
 			});
-			finalUserName = userId; // Keep userId as name for new user
-			finalAvatarUrl = avatarUrl;
 
-			// --- 5. Configure Logging & Store User Info ---
-			logger.setUserInfo({ userId: userId, userName: finalUserName });
-			localStorage.setItem("username", finalUserName); // Store potentially updated name
-			localStorage.setItem("useravatar", finalAvatarUrl); // Store final avatar URL
+			// Set up logging
+			logger.setUserInfo({ userId, userName: userId });
+			localStorage.setItem("username", userId);
 
-			console.log("User check/creation complete.");
+			// App is ready
+			console.log("App initialization complete");
+			setAppState({ status: "ready", zero: z as TZero });
 
-			// --- 6. Render the App ---
-			// Now that Zero is ready and user exists, render the actual app.
-			// The ZeroProvider needs the *initialized* zeroInstance.
-			render(
-				() => (
-					<ZeroProvider zero={zeroInstance as NonNullable<TZero>}>
-						<App />
-					</ZeroProvider>
-				),
-				root as MountableElement, // Render directly into the root element
-			);
-			console.log("SolidJS app rendered.");
-
-			// --- 7. Signal App is Ready ---
-			// Call the global function defined in index.html to hide the loader
+			// Signal app is ready to the HTML loader
 			window.appReady?.();
 			localStorage.removeItem("errorState");
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : String(error);
-			logger.error("Failed to initialize app:", error);
-			console.error("App initialization failed:", error);
-
-			// --- 8. Signal App Error ---
-			// Use the global error handler
-			window.appError?.(`Initialization failed: ${errorMessage}`);
-			if (!localStorage.getItem("errorState")) {
-				localStorage.removeItem("userId");
-				localStorage.removeItem("jwt");
-				localStorage.removeItem("color");
-				const idbName = zeroInstance?.idbName;
-				if (idbName) {
-					window.indexedDB.deleteDatabase(idbName);
-				}
-
-				window.location.reload();
-			}
-
-			localStorage.setItem("errorState", "true");
+			handleError(error);
 		}
-	});
+	};
 
-	// Return null or an empty fragment because rendering is handled inside onMount->render()
-	// or controlled by index.html's loader.
-	return null;
+	// Handle errors consistently
+	const handleError = (error: unknown) => {
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		console.error("App initialization failed:", error);
+		logger.error("Failed to initialize app:", error);
+
+		setAppState({ status: "error", message: errorMessage });
+		window.appError?.(`Initialization failed: ${errorMessage}`);
+
+		// Cleanup on fatal errors
+		if (!localStorage.getItem("errorState")) {
+			localStorage.removeItem("userId");
+			localStorage.removeItem("jwt");
+			localStorage.removeItem("color");
+
+			// Reload after a short delay to try again
+			setTimeout(() => window.location.reload(), 500);
+		}
+
+		localStorage.setItem("errorState", "true");
+	};
+
+	// Render based on application state
+	return (
+		<Show
+			when={appState().status === "ready"}
+			fallback={
+				<>
+					<Show when={appState().status === "selecting_user"}>
+						<UserSelection onUserSelected={handleUserSelected} />
+					</Show>
+
+					<Show
+						when={
+							appState().status === "loading" ||
+							appState().status === "initializing"
+						}
+					>
+						<AppLoading />
+					</Show>
+
+					<Show when={appState().status === "error"}>
+						<div class="fixed inset-0 bg-[var(--bg-color)] flex items-center justify-center z-50">
+							<div class="p-6 max-w-md bg-[var(--card-bg-color)] rounded-lg shadow-lg text-center">
+								<h2 class="text-xl font-bold mb-4">Error</h2>
+								<p class="text-[var(--error-color)] mb-4">
+									{(appState() as { message: string }).message}
+								</p>
+								<button
+									type="button"
+									class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-md"
+									onClick={() => window.location.reload()}
+								>
+									Retry
+								</button>
+							</div>
+						</div>
+					</Show>
+				</>
+			}
+		>
+			<ZeroProvider zero={(appState() as { zero: TZero }).zero}>
+				<App />
+			</ZeroProvider>
+		</Show>
+	);
 }
 
-// Render the AppLoader component initially. It won't render UI itself,
-// but its onMount hook will drive the initialization process.
-render(() => <AppLoader />, root);
-console.log("Initial AppLoader render triggered.");
+render(() => <MainApp />, root as MountableElement);

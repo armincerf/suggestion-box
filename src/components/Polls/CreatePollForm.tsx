@@ -19,12 +19,15 @@ const optionSchema = z.object({
 });
 
 const questionSchema = z.object({
-	text: z.string().min(1, "Question text cannot be empty"),
+	text: z.string().min(1, "Please enter a question"),
 	options: z.array(optionSchema).min(2, "Add at least two options"),
 });
 
 const pollFormSchema = z.object({
-	title: z.string().min(3, "Poll title must be at least 3 characters"),
+	title: z
+		.string()
+		.min(3, "Poll title must be at least 3 characters")
+		.default("Poll"),
 	questions: z.array(questionSchema).min(1, "Add at least one question"),
 });
 
@@ -49,8 +52,8 @@ export function CreatePollForm(props: CreatePollFormProps) {
 	const formContext = createForm({
 		schema: pollFormSchema,
 		initialState: {
-			title: "",
-			questions: [{ text: "", options: [{ text: "" }, { text: "" }] }], // Start with one question, two options
+			title: "Poll",
+			questions: [{ text: "", options: [{ text: "Yes" }, { text: "No" }] }], // Start with one question, two options
 		},
 		// Add type annotation for state
 		onSubmit: async (state: PollFormData) => {
@@ -121,10 +124,6 @@ export function CreatePollForm(props: CreatePollFormProps) {
 	return (
 		<Form context={formContext}>
 			<div class="space-y-4 bg-base-200 dark:bg-gray-700 p-4 rounded-lg shadow-md">
-				<h2 class="text-xl font-bold mb-4 dark:text-white">
-					Create a New Poll
-				</h2>
-
 				<TextField id="pollTitle" label="Poll Title/Topic" path="title" />
 
 				<ArrayField

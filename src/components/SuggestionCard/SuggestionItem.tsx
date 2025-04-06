@@ -1,18 +1,20 @@
-import { createSignal, createMemo } from "solid-js";
+import { createSignal, createMemo, createEffect } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import type { Suggestion } from "../../../shared/zero/schema";
 import { getNameFromUserId } from "../../nameGenerator";
 import { ErrorFallback } from "../ErrorFallback";
-import { useZero } from "../../zero/ZeroContext";
 import {
 	useEditSuggestion,
 	useAddComment,
+	useDeleteSuggestion,
 } from "../../hooks/mutations/suggestionMutations";
 import { createLogger } from "../../hyperdx-logger";
 import { SuggestionHeader } from "./SuggestionHeader";
 import { SuggestionBody } from "./SuggestionBody";
 import { SuggestionActions } from "./SuggestionActions";
 import { CommentSection } from "../Comments/CommentSection";
+import { cn } from "../../utils/cn";
+import { useConfirm } from "../../contexts/ConfirmContext";
 
 const logger = createLogger("suggestion-box:SuggestionItem");
 
@@ -21,16 +23,21 @@ export interface SuggestionItemProps {
 	userId: string;
 	displayName: string;
 	readOnly?: boolean;
+	highlightCommentId?: string | undefined;
+	id?: string;
 }
 
 export function SuggestionItem(props: SuggestionItemProps) {
 	const suggestion = () => props.suggestion;
 	const userId = () => props.userId;
 	const displayName = () => props.displayName;
+	const readOnly = () => props.readOnly ?? false;
+	const highlightCommentId = () => props.highlightCommentId;
 
-	const z = useZero();
 	const editSuggestion = useEditSuggestion();
 	const addCommentMutation = useAddComment();
+	const deleteSuggestion = useDeleteSuggestion();
+	const { confirm } = useConfirm();
 
 	const [showCommentForm, setShowCommentForm] = createSignal(false);
 	const [isEditing, setIsEditing] = createSignal(false);
@@ -38,10 +45,6 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const [isSubmittingEdit, setIsSubmittingEdit] = createSignal(false);
 	const [editError, setEditError] = createSignal<string | null>(null);
 	const [commentError, setCommentError] = createSignal<string | null>(null);
-	const [selectedText, setSelectedText] = createSignal<{
-		start: number;
-		end: number;
-	} | null>(null);
 
 	const suggestionAuthor = createMemo(() => {
 		return suggestion().displayName || getNameFromUserId(suggestion().userId);
@@ -50,55 +53,42 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	const suggestionId = `suggestion-${suggestion().id}`;
 	const commentFormId = `comment-form-${suggestion().id}`;
 
-	const isOwnSuggestion = () => suggestion().userId === userId();
+	const isOwnSuggestion = createMemo(() => suggestion().userId === userId());
 
-	const handleTextSelection = (start: number, end: number) => {
-		setSelectedText({ start, end });
-		setShowCommentForm(true);
-	};
-
-	const clearTextSelection = () => {
-		setSelectedText(null);
-	};
-
-	const handleAddComment = async (text: string) => {
+	const handleAddComment = async (
+		body: string,
+		parentCommentId: string | null = null,
+		selectionStart: number | null = null,
+		selectionEnd: number | null = null,
+	) => {
+		if (readOnly()) return;
 		setCommentError(null);
-		const sel = selectedText();
-
 		try {
-			const result = await addCommentMutation(
-				text,
+			await addCommentMutation(
+				body,
 				suggestion().id,
-				null,
-				sel?.start ?? null,
-				sel?.end ?? null,
+				parentCommentId,
+				selectionStart,
+				selectionEnd,
 			);
-			if (!result.success) {
-				logger.error("Failed to add comment", result.error);
-				setCommentError("Failed to add comment. Please try again.");
-				throw result.error;
-			}
-			setShowCommentForm(false);
-			setSelectedText(null);
-		} catch (e) {
-			if (!commentError()) {
-				logger.error("Unexpected error adding comment", e);
-				setCommentError("An unexpected error occurred.");
-			}
+		} catch (error) {
+			console.error("Error adding comment:", error);
+			setCommentError(
+				error instanceof Error ? error.message : "Failed to add comment.",
+			);
 		}
 	};
 
-	const submitEdit = async (e?: Event) => {
-		e?.preventDefault();
-		const trimmedBody = editedBody().trim();
-		if (!trimmedBody) return;
+	const submitEdit = async () => {
+		if (readOnly()) return;
+		if (!isOwnSuggestion() || !editedBody().trim()) return;
 
 		setIsSubmittingEdit(true);
 		setEditError(null);
 		try {
 			const result = await editSuggestion(
 				suggestion().id,
-				trimmedBody,
+				editedBody(),
 				suggestion().categoryId,
 			);
 			if (!result.success) {
@@ -118,6 +108,7 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	};
 
 	const handleEditClick = () => {
+		if (readOnly()) return;
 		setEditError(null);
 		setEditedBody(suggestion().body);
 		setIsEditing(true);
@@ -129,12 +120,30 @@ export function SuggestionItem(props: SuggestionItemProps) {
 	};
 
 	const handleToggleCommentForm = () => {
+		if (readOnly()) return;
 		setShowCommentForm((s) => !s);
-		if (showCommentForm()) {
-			setSelectedText(null);
-		}
 	};
 
+	const handleDeleteClick = async () => {
+		if (readOnly()) return;
+		if (!isOwnSuggestion()) return;
+		const confirmed = await confirm(
+			"Are you sure you want to delete this suggestion and all its comments?",
+			{
+				confirmText: "Delete",
+				cancelText: "Cancel",
+				confirmVariant: "danger",
+			},
+		);
+
+		if (confirmed) {
+			try {
+				await deleteSuggestion(suggestion().id);
+			} catch (error) {
+				console.error("Error deleting suggestion:", error);
+			}
+		}
+	};
 	return (
 		<ErrorBoundary
 			fallback={(error, reset) => (
@@ -145,37 +154,49 @@ export function SuggestionItem(props: SuggestionItemProps) {
 				/>
 			)}
 		>
-			<div class="card card-compact sm:card-normal w-full bg-base-100 shadow-md suggestion-item group-item">
+			<div
+				id={props.id ?? suggestionId}
+				class={cn(
+					"card card-compact sm:card-normal w-full bg-base-100 dark:bg-base-900 shadow-md suggestion-item group-item",
+					"transition-transform duration-600 ease-in-out",
+					readOnly() &&
+						"suggestion-item-readonly opacity-75 pointer-events-none",
+				)}
+			>
 				<div class="card-body">
 					<SuggestionHeader
 						userId={suggestion().userId}
 						displayName={suggestion().displayName}
 						timestamp={suggestion().timestamp}
+						readOnly={readOnly()}
+						onDelete={
+							isOwnSuggestion() && !readOnly() ? handleDeleteClick : undefined
+						}
 					/>
 
 					<SuggestionBody
 						suggestionId={suggestionId}
 						initialBody={suggestion().body}
-						isEditing={isEditing()}
+						isEditing={isEditing() && !readOnly()}
 						editedBody={editedBody()}
 						onEditInput={setEditedBody}
 						onSubmitEdit={submitEdit}
 						onCancelEdit={handleCancelEdit}
 						isSubmittingEdit={isSubmittingEdit()}
 						editError={editError()}
-						onTextSelection={handleTextSelection}
-						clearTextSelection={clearTextSelection}
 						authorDisplayName={suggestionAuthor()}
+						readOnly={readOnly()}
 					/>
 
 					<SuggestionActions
-						suggestion={suggestion()}
+						suggestion={suggestion}
 						isOwnSuggestion={isOwnSuggestion()}
 						isEditing={isEditing()}
 						onCommentClick={handleToggleCommentForm}
 						onEditClick={handleEditClick}
 						commentFormId={commentFormId}
 						commentFormVisible={showCommentForm()}
+						readOnly={readOnly()}
 					/>
 
 					<CommentSection
@@ -186,9 +207,10 @@ export function SuggestionItem(props: SuggestionItemProps) {
 						onAddComment={handleAddComment}
 						commentError={commentError()}
 						showCommentForm={showCommentForm()}
-						selectedText={selectedText()}
 						commentFormId={commentFormId}
 						newCommentInputId={`new-comment-${suggestion().id}`}
+						readOnly={readOnly()}
+						highlightCommentId={highlightCommentId()}
 					/>
 				</div>
 			</div>

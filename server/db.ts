@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: "../.env" }); // Load .env from parent directory
 
-const connectionString = process.env.ZERO_UPSTREAM_DB;
+const connectionString = process.env.PROD_DB_URL || process.env.ZERO_UPSTREAM_DB;
 
 if (!connectionString) {
 	console.error(

@@ -7,20 +7,73 @@
 }
 
 .group-item {
-  transition: transform 0.5s ease, opacity 0.5s ease;
-  will-change: transform, opacity;
-  transform: translateY(0);
-  backface-visibility: hidden;
+	transition: transform 0.5s ease, opacity 0.5s ease;
+	will-change: transform, opacity;
+	transform: translateY(0);
+	backface-visibility: hidden;
 }
 
 .group-item-enter,
 .group-item-exit-to {
-  opacity: 0;
-  transform: translateY(30px);
+	opacity: 0;
+	transform: translateY(30px);
 }
 
 .group-item-exit-active {
-  position: absolute;
-  width: 100%;
-  pointer-events: none;
+	position: absolute;
+	width: 100%;
+	pointer-events: none;
+}
+
+.highlight-temporary {
+	transition: all 0.3s ease-in-out !important;
+	background-color: rgba(99, 102, 241, 0.1) !important; /* Light indigo background */
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5) !important; /* Indigo ring */
+	border-radius: 0.375rem !important; /* Match card rounding */
+	scroll-margin-top: 20px !important;
+	scroll-margin-bottom: 20px !important;
+	width: 98% !important;
+	margin-left: 3px !important;
+}
+
+.suggestion-item-readonly {
+	opacity: 0.7;
+}
+
+.suggestion-item-readonly .suggestion-actions button:not(.btn-error),
+.suggestion-item-readonly .comment-form-container,
+.suggestion-item-readonly .reaction-button:not(.opacity-50),
+.comment-item-readonly
+	button:not(.text-error):not(.btn-ghost.text-info):not(.btn-ghost.text-accent),
+.comment-item-readonly .reaction-button:not(.opacity-50) {
+	opacity: 0.6 !important; /* Use important to override other styles */
+	cursor: not-allowed !important;
+	pointer-events: none !important; /* Prevent clicks more reliably */
+}
+
+.vote-bg {
+	@apply bg-gray-200 dark:bg-gray-600; /* Default bar background */
+}
+
+.vote-bg-own {
+	@apply bg-blue-300 dark:bg-blue-700; /* Background for user's own vote */
+}
+
+.vote-bg-winning {
+	@apply bg-green-300 dark:bg-green-700; /* Background for the winning option */
+}
+
+/* Ensure transitions are enabled if not already global */
+/* e.g., add transition-all duration-500 to relevant elements */
+
+/* Optional: Add keyframes for subtle animation */
+@keyframes width-grow {
+	from {
+		width: 0%;
+	}
+	/* 'to' is set by inline style */
+}
+
+.animate-width-grow {
+	animation: width-grow 0.5s ease-out forwards;
 }

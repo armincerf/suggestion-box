@@ -79,6 +79,7 @@ export function useCreateSession() {
 			logger.error("Failed to create session:", error);
 			return {
 				success: false,
+				data: null,
 				error: error instanceof Error ? error : new Error(String(error)),
 			};
 		}

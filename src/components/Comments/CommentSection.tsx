@@ -22,17 +22,22 @@ interface CommentSectionProps {
 	comments: Readonly<Comment[]> | undefined;
 	userId: string;
 	displayName: string;
-	onAddComment: (text: string) => Promise<void>;
+	onAddComment: (
+		body: string,
+		parentCommentId?: string | null,
+		selectionStart?: number | null,
+		selectionEnd?: number | null,
+	) => Promise<void>;
 	commentError: string | null;
 	showCommentForm: boolean;
-	selectedText: { start: number; end: number } | null;
 	commentFormId: string; // ID for the form container
 	newCommentInputId: string; // ID for the form input itself
+	readOnly?: boolean;
+	highlightCommentId?: string | undefined;
 }
 
-// These could be props if more flexibility is needed
-const ROOT_MAX_DEPTH = 1;
-const ROOT_MAX_VISIBLE_REPLIES = 1;
+const ROOT_MAX_DEPTH = 2;
+const ROOT_MAX_VISIBLE_REPLIES = 2;
 const FOCUSED_MAX_DEPTH = ROOT_MAX_DEPTH + 3;
 
 export function CommentSection(props: CommentSectionProps) {
@@ -67,17 +72,18 @@ export function CommentSection(props: CommentSectionProps) {
 		if (!commentsExpanded()) {
 			setCommentsExpanded(true); // Auto-expand comments if focusing a thread
 		}
-		// Optional: Scroll management could be added here
 	};
 
 	const handleGoBack = () => {
 		setFocusStack((prev) => prev.slice(0, -1));
-		// Optional: Scroll management could be added here
 	};
+
+	const readOnly = () => props.readOnly ?? false;
+	const highlightCommentId = () => props.highlightCommentId;
 
 	return (
 		<>
-			<Show when={props.showCommentForm}>
+			<Show when={props.showCommentForm && !readOnly()}>
 				<div
 					class="mt-3 card border card-body p-3 comment-form-container"
 					id={props.commentFormId}
@@ -85,13 +91,10 @@ export function CommentSection(props: CommentSectionProps) {
 					<CommentForm
 						id={props.newCommentInputId}
 						onSubmit={props.onAddComment}
-						placeholder={
-							props.selectedText
-								? "Comment on selection..."
-								: "Add a comment..."
-						}
+						placeholder="Add a comment..."
 						displayName={props.displayName}
 						autoFocus={true}
+						readOnly={readOnly()}
 					/>
 					<Show when={props.commentError}>
 						<p class="text-error text-xs mt-1">{props.commentError}</p>
@@ -139,7 +142,12 @@ export function CommentSection(props: CommentSectionProps) {
 							)}
 						>
 							<div class={cn("overflow-hidden")}>
-								<div class={cn("transition-opacity duration-200 ease-in-out", commentsExpanded() ? "opacity-100 delay-100" : "opacity-0")}>
+								<div
+									class={cn(
+										"transition-opacity duration-200 ease-in-out",
+										commentsExpanded() ? "opacity-100 delay-100" : "opacity-0",
+									)}
+								>
 									<Show
 										when={!isThreadFocused()}
 										fallback={
@@ -151,6 +159,8 @@ export function CommentSection(props: CommentSectionProps) {
 														onViewThread={handleViewThread}
 														maxDepth={FOCUSED_MAX_DEPTH}
 														maxVisibleDirectReplies={ROOT_MAX_VISIBLE_REPLIES}
+														readOnly={readOnly()}
+														highlightCommentId={highlightCommentId()}
 													/>
 												)}
 											</Show>
@@ -181,7 +191,10 @@ export function CommentSection(props: CommentSectionProps) {
 															depth={0}
 															maxDepth={ROOT_MAX_DEPTH}
 															maxVisibleDirectReplies={ROOT_MAX_VISIBLE_REPLIES}
-															onViewThread={handleViewThread} />
+															onViewThread={handleViewThread}
+															readOnly={readOnly()}
+															highlightCommentId={highlightCommentId()}
+														/>
 													);
 												}}
 											/>

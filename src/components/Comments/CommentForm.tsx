@@ -11,6 +11,7 @@ interface CommentFormProps {
 	inReplyTo?: string;
 	displayName: string;
 	autoFocus?: boolean;
+	readOnly?: boolean;
 }
 
 /**

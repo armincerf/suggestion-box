@@ -21,9 +21,9 @@ export const userByIdQuery = (z: TZero, userId: string | null) =>
 
 export const usersQuery = (z: TZero) => z.query.users;
 
-export function useUser() {
+export function useUser(id?: string) {
 	const z = useZero();
-	const userId = createMemo(() => z.userID || getUserIdentifier());
+	const userId = createMemo(() => id || z.userID || getUserIdentifier());
 
 	const [user] = useQuery(() => userByIdQuery(z, userId()), {
 		ttl: QUERY_TTL_FOREVER,

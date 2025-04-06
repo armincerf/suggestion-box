@@ -90,7 +90,7 @@ export function WaitingRoom(props: WaitingRoomProps) {
 						<For each={props.users}>
 							{(user) => (
 								<div class="flex items-center p-3 border dark:border-gray-700 rounded-lg dark:bg-gray-700">
-									<div class="size-10 rounded-full overflow-hidden mr-3">
+									<div class="size-20 rounded-full overflow-hidden mr-3">
 										<img
 											src={
 												user.avatarUrl ||

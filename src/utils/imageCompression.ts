@@ -22,13 +22,12 @@ export const compressImage = (img: Blob, quality: number): Promise<Blob> =>
       // Release the object URL
       URL.revokeObjectURL(blobURL);
       
-      // Resize to 128x128 for avatars (increased from 64x64)
-      canvas.width = 128;
-      canvas.height = 128;
+      canvas.width = 256;
+      canvas.height = 256;
       
       if (ctx) {
         // Draw the image with proper scaling
-        ctx.drawImage(imgEl, 0, 0, imgEl.width, imgEl.height, 0, 0, 128, 128);
+        ctx.drawImage(imgEl, 0, 0, imgEl.width, imgEl.height, 0, 0, 256, 256);
         
         // Convert to WebP if supported
         if (canvas.toBlob) {

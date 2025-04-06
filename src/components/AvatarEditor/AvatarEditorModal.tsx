@@ -50,7 +50,7 @@ export function AvatarEditorModal(props: AvatarEditorModalProps) {
 					>
 						Draw Pixel Art
 					</button>
-					{/* <button
+					<button
 						type="button"
 						class={tabClass("upload")}
 						onClick={() => setActiveTab("upload")}
@@ -58,7 +58,7 @@ export function AvatarEditorModal(props: AvatarEditorModalProps) {
 						role="tab"
 					>
 						Upload
-					</button> */}
+					</button>
 					<button
 						type="button"
 						class={tabClass("random")}

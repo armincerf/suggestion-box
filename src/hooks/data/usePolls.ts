@@ -1,8 +1,15 @@
 import { useQuery } from "@rocicorp/zero/solid";
 import { type TZero, useZero } from "../../zero/ZeroContext";
-import { createMemo, type Accessor } from "solid-js";
-import { QUERY_TTL_SHORT, QUERY_TTL_FOREVER, DUMMY_QUERY_ID } from "../../utils/constants";
-import type { Poll, PollVote, PollQuestion, PollOption, PollAcknowledgement } from "../../../shared/zero/schema";
+import { createMemo, type Accessor, createEffect } from "solid-js";
+import {
+	QUERY_TTL_SHORT,
+	QUERY_TTL_FOREVER,
+	DUMMY_QUERY_ID,
+} from "../../utils/constants";
+import type { Poll, PollVote } from "../../../shared/zero/schema";
+import { createLogger } from "../../hyperdx-logger";
+
+const logger = createLogger("suggestion-box:usePolls");
 
 /**
  * Query for the currently active poll in a session.
@@ -19,7 +26,9 @@ export const activePollQuery = (z: TZero, sessionId: string | undefined) => {
 		.orderBy("createdAt", "desc") // Get the most recent one if multiple somehow exist
 		.limit(1)
 		.related("questions", (q) =>
-			q.orderBy("order", "asc").related("options", (o) => o.orderBy("order", "asc")),
+			q
+				.orderBy("order", "asc")
+				.related("options", (o) => o.orderBy("order", "asc")),
 		) // Get questions and their options, ordered
 		.related("creator") // Get user who created the poll
 		.one(); // Expect only one active poll at most
@@ -32,21 +41,29 @@ export const activePollQuery = (z: TZero, sessionId: string | undefined) => {
 export function useActivePoll(sessionId: Accessor<string | undefined>) {
 	const z = useZero();
 	// Pass the query *function* to useQuery, it will be re-run when sessionId() changes.
-	return useQuery(() => activePollQuery(z, sessionId()), { ttl: QUERY_TTL_SHORT });
+	return useQuery(() => activePollQuery(z, sessionId()), {
+		ttl: QUERY_TTL_SHORT,
+	});
 }
 
 /**
  * Query for all ended polls within a session, ordered by most recently ended.
  * Includes related questions, options, and creator for comprehensive display.
  */
-export const endedSessionPollsQuery = (z: TZero, sessionId: string | undefined) => {
+export const endedSessionPollsQuery = (
+	z: TZero,
+	sessionId: string | undefined,
+) => {
 	if (!sessionId) return z.query.polls.where("id", "=", DUMMY_QUERY_ID);
 	return z.query.polls
 		.where("sessionId", "=", sessionId)
 		.where("endedAt", "IS NOT", null)
 		.orderBy("endedAt", "desc")
-		.related("questions", q => q.orderBy("order", "asc")
-			.related("options", o => o.orderBy("order", "asc")))
+		.related("questions", (q) =>
+			q
+				.orderBy("order", "asc")
+				.related("options", (o) => o.orderBy("order", "asc")),
+		)
 		.related("creator");
 };
 
@@ -56,7 +73,9 @@ export const endedSessionPollsQuery = (z: TZero, sessionId: string | undefined) 
  */
 export function useEndedSessionPolls(sessionId: Accessor<string | undefined>) {
 	const z = useZero();
-	return useQuery(() => endedSessionPollsQuery(z, sessionId()), { ttl: QUERY_TTL_FOREVER });
+	return useQuery(() => endedSessionPollsQuery(z, sessionId()), {
+		ttl: QUERY_TTL_FOREVER,
+	});
 }
 
 /**
@@ -64,9 +83,9 @@ export function useEndedSessionPolls(sessionId: Accessor<string | undefined>) {
  * Used to track which polls a user has seen results for.
  */
 export const sessionUserPollAcknowledgementsQuery = (
-	z: TZero, 
-	userId: string | undefined, 
-	sessionId: string | undefined
+	z: TZero,
+	userId: string | undefined,
+	sessionId: string | undefined,
 ) => {
 	if (!userId || !sessionId) {
 		return z.query.pollAcknowledgements.where("id", "=", DUMMY_QUERY_ID);
@@ -83,13 +102,13 @@ export const sessionUserPollAcknowledgementsQuery = (
  * Returns a SolidJS resource: `[Accessor<PollAcknowledgement[] | undefined>, { refetch: () => void }]`
  */
 export function useMySessionPollAcknowledgements(
-	userId: Accessor<string | undefined>, 
-	sessionId: Accessor<string | undefined>
+	userId: Accessor<string | undefined>,
+	sessionId: Accessor<string | undefined>,
 ) {
 	const z = useZero();
 	return useQuery(
 		() => sessionUserPollAcknowledgementsQuery(z, userId(), sessionId()),
-		{ ttl: QUERY_TTL_SHORT }
+		{ ttl: QUERY_TTL_SHORT },
 	);
 }
 
@@ -98,7 +117,10 @@ export function useMySessionPollAcknowledgements(
  * Note: This is a placeholder that would ideally fetch votes for all polls in a session.
  * In practice, we recommend fetching votes per poll as needed for better performance.
  */
-export const sessionPollVotesQuery = (z: TZero, sessionId: string | undefined) => {
+export const sessionPollVotesQuery = (
+	z: TZero,
+	sessionId: string | undefined,
+) => {
 	if (!sessionId) {
 		return z.query.pollVotes.where("id", "=", DUMMY_QUERY_ID);
 	}
@@ -107,7 +129,7 @@ export const sessionPollVotesQuery = (z: TZero, sessionId: string | undefined) =
 	// 1. First fetch poll IDs for the session
 	// 2. Then fetch votes for those polls
 	// Or filter client-side using the poll relation
-	
+
 	// For now, we'll need to handle this logic at the component level
 	// using multiple usePollVotes hooks for each relevant poll
 	return z.query.pollVotes.where("id", "=", DUMMY_QUERY_ID); // Placeholder
@@ -152,7 +174,10 @@ export function usePollResults(pollId: Accessor<string | undefined>) {
 			return null;
 		}
 
-		const resultsMap = new Map<string, { text: string; count: number; questionId: string }>();
+		const resultsMap = new Map<
+			string,
+			{ text: string; count: number; questionId: string }
+		>();
 
 		// Explicitly type 'vote' here based on the expected schema type with relations
 		for (const vote of votes as PollVote[]) {
@@ -196,7 +221,9 @@ export interface PollResultsData {
  * Hook to structure poll results by question, using the full Poll object.
  * Returns a memoized PollResultsData object or null.
  */
-export function useStructuredPollResults(poll: Accessor<Poll | null | undefined>) {
+export function useStructuredPollResults(
+	poll: Accessor<Poll | null | undefined>,
+) {
 	// Derive pollId reactively from the poll accessor
 	const pollId = createMemo(() => poll()?.id);
 	const [votesData] = usePollVotes(pollId); // Fetch votes based on the derived pollId
@@ -261,4 +288,49 @@ export function useStructuredPollResults(poll: Accessor<Poll | null | undefined>
 	});
 
 	return structuredResults; // Returns the Accessor created by createMemo
-} 
+}
+
+/**
+ * Query to get a single poll by ID with all related data.
+ */
+export const pollByIdQuery = (z: TZero, pollId: string | undefined) => {
+	if (!pollId) {
+		// Return a query that yields nothing
+		return z.query.polls.where("id", "=", DUMMY_QUERY_ID).one();
+	}
+
+	logger.debug("pollByIdQuery called", { pollId });
+
+	return z.query.polls
+		.where("id", "=", pollId)
+		.related("questions", (q) =>
+			q
+				.orderBy("order", "asc")
+				.related("options", (o) => o.orderBy("order", "asc")),
+		)
+		.related("creator")
+		.one();
+};
+
+/**
+ * Hook to get a poll by ID with all related data.
+ * Returns a SolidJS resource: `[Accessor<Poll | null | undefined>, { refetch: () => void }]`
+ */
+export function usePollById(pollId: Accessor<string | undefined>) {
+	const z = useZero();
+	const result = useQuery(() => pollByIdQuery(z, pollId()), {
+		ttl: QUERY_TTL_SHORT,
+	});
+
+	// Debug logging to understand what's happening
+	createEffect(() => {
+		const poll = result[0]();
+		logger.debug("usePollById result", {
+			pollIdParam: pollId(),
+			hasPoll: !!poll,
+			resultPollId: poll?.id,
+		});
+	});
+
+	return result;
+}

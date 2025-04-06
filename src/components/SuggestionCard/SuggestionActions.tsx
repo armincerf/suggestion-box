@@ -1,20 +1,21 @@
-import { Show } from "solid-js";
+import { type Accessor, Show } from "solid-js";
 import type { Suggestion } from "../../../shared/zero/schema";
 import { ReactionButtons } from "../ReactionButtons";
 
 interface SuggestionActionsProps {
-	suggestion: Suggestion;
+	suggestion: Accessor<Suggestion>;
 	isOwnSuggestion: boolean;
 	isEditing: boolean;
 	onCommentClick: () => void;
 	onEditClick: () => void;
 	commentFormId: string; // For aria-controls
 	commentFormVisible: boolean; // For aria-expanded
+	readOnly?: boolean;
 }
 
 export function SuggestionActions(props: SuggestionActionsProps) {
 	const handleReportClick = () => {
-        // april fools joke
+		// april fools joke
 		window.location.href =
 			"https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUjcmljayBhc3RsZXkgbmV2ZXIgZ29ubmEgZ2l2ZSB5b3UgdXA%3D";
 	};
@@ -46,11 +47,11 @@ export function SuggestionActions(props: SuggestionActionsProps) {
 			<button
 				type="button"
 				onClick={handleReportClick}
-				class="btn btn-xs btn-error"
+				class="hidden btn btn-xs btn-error"
 				aria-label="Report suggestion"
 			>
 				Report
 			</button>
 		</div>
 	);
-} 
+}

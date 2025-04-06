@@ -1,16 +1,14 @@
-import { onMount, Index, createMemo, type Accessor } from "solid-js";
+import { onMount, Index, createMemo } from "solid-js";
 import { ErrorBoundary } from "solid-js";
 import { ErrorFallback } from "../ErrorFallback";
 import { cn } from "../../utils/cn";
 import { Column } from "./Column";
 import { useCategories } from "../../hooks/data/useCategories";
-import type { Suggestion } from "../../../shared/zero/schema";
 
 export function Board(props: {
 	userId: string;
 	displayName: string;
 	readOnly?: boolean;
-	suggestions: Accessor<Suggestion[]>;
 }) {
 	const [categories] = useCategories();
 	let xScrollableRef: HTMLDivElement | undefined;
@@ -56,7 +54,6 @@ export function Board(props: {
 			<div
 				ref={xScrollableRef}
 				id="x-scrollable"
-				aria-label={`${props.suggestions().length} suggestions`}
 				class={cn(
 					"h-full flex flex-nowrap",
 					"items-stretch overflow-x-auto overflow-y-hidden",
@@ -66,13 +63,9 @@ export function Board(props: {
 			>
 				<Index each={visibleCategoryList()}>
 					{(category) => {
-						const categorySuggestions = createMemo(() =>
-							props.suggestions().filter((s) => s.categoryId === category().id),
-						);
 						return (
 							<Column
 								category={category()}
-								suggestions={categorySuggestions}
 								userId={props.userId}
 								displayName={props.displayName}
 								readOnly={props.readOnly ?? false}

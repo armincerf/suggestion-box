@@ -2,7 +2,7 @@ import { createMemo, createSignal, Index, type JSX, Show } from "solid-js";
 import { useZero } from "../zero/ZeroContext";
 import { useQuery } from "@rocicorp/zero/solid";
 import { AvatarEditorModal } from "./AvatarEditor";
-import { Popover } from "@ark-ui/solid/popover";
+import { HoverCard } from "@ark-ui/solid/hover-card";
 import { createListCollection, Select } from "@ark-ui/solid";
 import { Portal } from "solid-js/web";
 import { useUser } from "../hooks/data/useUser";
@@ -11,89 +11,84 @@ import { createLogger } from "../hyperdx-logger";
 
 const logger = createLogger("suggestion-box:UserAvatar");
 
-function AvatarDetails(props: {
+function AvatarHoverCard(props: {
 	isMe: boolean;
 	currentDisplayName: string;
 	displayName: string;
+	avatarUrl: string;
 	children: JSX.Element;
 	class?: string | undefined;
-	isOpen: boolean;
-	onClose: () => void;
 }) {
-	const [isHovered, setIsHovered] = createSignal(false);
-
 	return (
-		<Popover.Root
-			open={props.isOpen}
-			closeOnEscape={false}
-			closeOnInteractOutside={false}
-			onInteractOutside={() => {
-				setIsHovered(false);
-				props.onClose();
-			}}
-			onEscapeKeyDown={() => {
-				setIsHovered(false);
-				props.onClose();
-			}}
-		>
-			<Popover.Anchor>
-				<div
-					class={`shrink-0 relative ${props.class || ""} ${isHovered() ? "bg-black bg-opacity-40 rounded-full" : ""}`}
-					onMouseEnter={() => setIsHovered(true)}
-					onMouseLeave={() => setIsHovered(false)}
-				>
+		<HoverCard.Root openDelay={300} closeDelay={200}>
+			<HoverCard.Trigger>
+				<div class={`shrink-0 relative ${props.class || ""}`}>
 					{props.children}
 				</div>
-			</Popover.Anchor>
-			<Popover.Positioner>
-				<Popover.Content class="bg-white rounded-lg p-4 dark:bg-gray-800">
-					<Popover.Title>User Details</Popover.Title>
-					<Popover.Description>
-						<p>
-							<span class="font-bold">
-								{props.displayName !== props.currentDisplayName
-									? "Now known as"
-									: "Name:"}
-							</span>{" "}
-							{props.isMe ? "It's a me!" : props.currentDisplayName}
-						</p>
-					</Popover.Description>
-				</Popover.Content>
-			</Popover.Positioner>
-		</Popover.Root>
+			</HoverCard.Trigger>
+			<Portal>
+				<HoverCard.Positioner>
+					<HoverCard.Content class="bg-white rounded-lg p-4 shadow-lg dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+						<HoverCard.Arrow>
+							<HoverCard.ArrowTip />
+						</HoverCard.Arrow>
+						<div class="flex flex-col items-center gap-3">
+							<img
+								src={props.avatarUrl}
+								alt={`${props.currentDisplayName}'s avatar`}
+								class="w-42  border-2 border-gray-200 dark:border-gray-700"
+							/>
+							<div class="text-center">
+								<p class="font-bold text-gray-800 dark:text-gray-200">
+									{props.currentDisplayName}
+								</p>
+								{props.isMe && (
+									<p class="text-sm text-gray-500 dark:text-gray-400">
+										It's a me!
+									</p>
+								)}
+								{props.displayName !== props.currentDisplayName && (
+									<p class="text-sm text-gray-500 dark:text-gray-400">
+										Previously known as {props.displayName}
+									</p>
+								)}
+							</div>
+						</div>
+					</HoverCard.Content>
+				</HoverCard.Positioner>
+			</Portal>
+		</HoverCard.Root>
 	);
 }
 
 interface UserAvatarProps {
 	userId: string;
 	displayName: string;
-	size?: "sm" | "md" | "lg";
+	size?: "xs" | "sm" | "md" | "lg";
 	class?: string;
 	editable?: boolean;
 }
 
 export function UserAvatar(props: UserAvatarProps) {
 	const z = useZero();
-	const { color: userColor } = useUser();
+	const { user, color: userColor } = useUser(props.userId);
 	const [isHovered, setIsHovered] = createSignal(false);
 	const [showEditor, setShowEditor] = createSignal(false);
 	const isCurrentUser = () => props.userId === z.userID;
 	const editable = () => props.editable !== false && isCurrentUser();
 
-	const [user] = useQuery(() => z.query.users.where("id", props.userId).one(), {
-		ttl: QUERY_TTL_FOREVER,
-	});
-
 	const avatarUrl = () => {
 		// Use the user's avatar if available, otherwise use a default with consistent color
 		return (
 			user()?.avatarUrl ||
-			`https://ui-avatars.com/api/?name=${encodeURIComponent(props.displayName)}&background=${encodeURIComponent(userColor().replace('#', ''))}&color=fff`
+			`https://ui-avatars.com/api/?name=${encodeURIComponent(props.displayName)}&background=${encodeURIComponent(userColor().replace("#", ""))}&color=fff`
 		);
 	};
 
 	const sizeClass = () => {
 		switch (props.size) {
+			case "xs":
+				return "size-4";
 			case "sm":
 				return "size-8";
 			case "lg":
@@ -106,8 +101,6 @@ export function UserAvatar(props: UserAvatarProps) {
 	const handleAvatarClick = () => {
 		if (editable()) {
 			setShowEditor(true);
-		} else {
-			setShowDetails(true);
 		}
 	};
 
@@ -131,31 +124,29 @@ export function UserAvatar(props: UserAvatarProps) {
 			throw error;
 		}
 	};
-	const [showDetails, setShowDetails] = createSignal(false);
 
 	return (
 		<>
-			<AvatarDetails
+			<AvatarHoverCard
 				isMe={isCurrentUser()}
 				currentDisplayName={user()?.displayName ?? ""}
 				displayName={props.displayName}
-				isOpen={showDetails()}
-				onClose={() => setShowDetails(false)}
+				avatarUrl={avatarUrl()}
 				class={props.class}
 			>
 				<div
-					class={`shrink-0 relative ${props.class || ""}`}
 					onMouseEnter={() => setIsHovered(true)}
 					onMouseLeave={() => setIsHovered(false)}
 					onClick={handleAvatarClick}
 					onKeyPress={handleKeyPress}
 					role={editable() ? "button" : undefined}
-					tabIndex={editable() ? 0 : undefined}
+					tabIndex={-1}
 					aria-label={
 						editable() ? `Edit ${props.displayName}'s avatar` : undefined
 					}
 				>
 					<img
+						tabIndex={-1}
 						alt={`${props.displayName}'s avatar`}
 						src={avatarUrl()}
 						class={`inline-block rounded-full ${sizeClass()} ${editable() ? "cursor-pointer" : ""}`}
@@ -181,7 +172,7 @@ export function UserAvatar(props: UserAvatarProps) {
 						</div>
 					)}
 				</div>
-			</AvatarDetails>
+			</AvatarHoverCard>
 
 			<Show when={showEditor()}>
 				<AvatarEditorModal

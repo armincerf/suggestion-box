@@ -1,6 +1,8 @@
-import { useZero } from "../../zero/ZeroContext";
+import { type TZero, useZero } from "../../zero/ZeroContext";
 import { createLogger } from "../../hyperdx-logger";
 import { useUser } from "../data/useUser";
+import type { ReactionEntityType } from "../../../shared/zero/schema";
+import { v4 as uuidv4 } from "uuid";
 
 const logger = createLogger("suggestion-box:suggestionMutations");
 
@@ -122,7 +124,6 @@ export function useAddComment(onSuccess?: (commentId: string) => void) {
 				userId: u.id,
 				displayName: u.displayName,
 				timestamp: Date.now(),
-				updatedAt: Date.now(),
 			});
 
 			// Same issue as with suggestions - no ID returned
@@ -161,5 +162,72 @@ export function useDeleteComment(onSuccess?: () => void) {
 				error: error instanceof Error ? error : new Error(String(error)),
 			};
 		}
+	};
+}
+
+/**
+ * Adds a specific reaction from a user to an entity.
+ * Does not handle toggling - primarily for simulation/programmatic adding.
+ */
+export async function addReaction(
+	userId: string,
+	entityId: string,
+	entityType: ReactionEntityType, // 'suggestion' or 'comment'
+	emoji: string,
+	z: TZero,
+) {
+	try {
+		const reactionId = uuidv4();
+		if (entityType === "suggestion") {
+			await z.mutate.reactions.insert({
+				id: reactionId,
+				userId,
+				suggestionId: entityId,
+				emoji,
+				timestamp: Date.now(),
+			});
+		} else {
+			await z.mutate.reactions.insert({
+				id: reactionId,
+				userId,
+				commentId: entityId,
+				emoji,
+				timestamp: Date.now(),
+			});
+		}
+		logger.info("Reaction added via simulation/direct add", {
+			reactionId,
+			userId,
+			entityId,
+			emoji,
+		});
+		return { success: true, data: reactionId };
+	} catch (error) {
+		// Log potential errors like duplicates if constraints exist
+		logger.error("Failed to add reaction", { error, userId, entityId, emoji });
+		return {
+			success: false,
+			error: error instanceof Error ? error : new Error(String(error)),
+		};
+	}
+}
+
+// --- Add this new hook ---
+/**
+ * Hook to get a function for adding a reaction directly.
+ */
+export function useAddReaction() {
+	const z = useZero();
+	const { userId } = useUser(); // Get current user ID
+
+	return (entityId: string, entityType: ReactionEntityType, emoji: string) => {
+		if (!userId) {
+			logger.warn("Attempted to add reaction without a user ID");
+			return Promise.resolve({
+				success: false,
+				error: new Error("User ID not available"),
+			});
+		}
+		return addReaction(userId, entityId, entityType, emoji, z);
 	};
 }

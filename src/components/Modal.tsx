@@ -1,4 +1,4 @@
-import { Show, createEffect, onCleanup } from "solid-js";
+import { Show, createEffect, onCleanup, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { cn } from "../utils/cn";
 
@@ -7,6 +7,7 @@ interface ModalProps {
 	onClose: () => void;
 	title: string;
 	children: JSX.Element;
+	size?: "default" | "lg" | "xl";
 }
 
 export function Modal(props: ModalProps) {
@@ -46,14 +47,25 @@ export function Modal(props: ModalProps) {
 		}
 	};
 
+	// Calculate size classes based on prop
+	const sizeClasses = createMemo(() => {
+		switch (props.size) {
+			case "lg":
+				return "md:max-w-3xl lg:max-w-5xl"; // Wider for lg
+			case "xl":
+				return "md:max-w-4xl lg:max-w-6xl"; // Wider for xl
+			default: // 'default' or undefined
+				return "max-w-md"; // Original default
+		}
+	});
+
 	return (
 		<Show when={props.isOpen}>
 			<dialog
 				class={cn(
-					"fixed inset-0 z-[500] flex items-center justify-center",
-					// Use background color WITH opacity modifier
+					"fixed inset-0 z-[500] flex items-start md:items-center justify-center", // Align top on small screens
 					"bg-black/50 dark:bg-gray-900/70",
-					"w-full h-full p-0 m-0 open:flex"
+					"w-full h-full p-4 md:p-0 m-0 open:flex", // Add padding for small screens
 				)}
 				onClick={handleBackdropClick}
 				onKeyDown={handleBackdropKeyDown}
@@ -61,13 +73,19 @@ export function Modal(props: ModalProps) {
 				aria-modal="true"
 				aria-labelledby="modal-title"
 			>
+				{/* Content Container */}
 				<div
 					class={cn(
-						"bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col",
-						"dark:bg-gray-800"
+						"bg-white rounded-lg shadow-xl w-full mx-auto flex flex-col",
+						// Responsive sizing and height
+						"h-[95vh] md:h-auto md:max-h-[85vh]", // Full height on small, constrained on medium+
+						sizeClasses(), // Apply dynamic size class
+						"dark:bg-gray-800",
 					)}
+					// Stop propagation to prevent backdrop click closing
 					onClick={(e) => e.stopPropagation()}
 					onKeyDown={(e) => e.stopPropagation()}
+					role="document" // Added role
 				>
 					{/* Header */}
 					<div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
@@ -98,8 +116,11 @@ export function Modal(props: ModalProps) {
 						</button>
 					</div>
 
-					{/* Content */}
-					<div class="p-4 overflow-y-auto flex-1 dark:text-gray-200">{props.children}</div>
+					{/* Body (make it scrollable) */}
+					{/* The direct child passed to Modal will now be placed here */}
+					<div class="flex-1 min-h-0 overflow-y-auto"> {/* Ensure body is scrollable and takes remaining space */}
+						{props.children}
+					</div>
 				</div>
 			</dialog>
 		</Show>
