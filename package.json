@@ -16,8 +16,8 @@
 		"dev:zero-cache": "dotenvx run --env-file .env -- bun dev:zero",
 		"prod:zero-cache": "dotenvx run --env-file .env.production -- zero-cache-dev -p shared/zero/schema.ts --port 4848",
 		"db:generate": "dotenvx run --env-file .env -- drizzle-kit generate",
-		"db:push-dev": "dotenvx run --env-file .env -- drizzle-kit push --config=./drizzleprod.config.ts",
-		"db:push-prod": "dotenvx run --env-file .env.production -- drizzle-kit push --config=./drizzleprod.config.ts",
+		"db:push-dev": "dotenvx run --env-file .env -- drizzle-kit push --config=./drizzle.config.ts",
+		"db:push-prod": "dotenvx run --env-file .env.production -- drizzle-kit push --config=./drizzle.config.ts",
 		"db:seed": "dotenvx run --env-file .env -- bun tsx scripts/db-setup.ts",
 		"db:studio": "dotenvx run --env-file .env -- drizzle-kit studio",
 		"postinstall": "patch-package"

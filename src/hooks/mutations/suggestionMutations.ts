@@ -40,7 +40,7 @@ export function useDeleteSuggestion(
 export function useEditSuggestion(onSuccess?: (suggestionId: string) => void) {
 	const z = useZero();
 
-	return async (suggestionId: string, body: string, categoryId: string) => {
+	return async (suggestionId: string, body: string, categoryId: string | null) => {
 		try {
 			await z.mutate.suggestions.update({
 				id: suggestionId,
@@ -69,7 +69,7 @@ export function useCreateSuggestion() {
 	const z = useZero();
 	const { user } = useUser();
 
-	return async (body: string, categoryId: string) => {
+	return async (body: string, categoryId: string | null) => {
 		try {
 			const u = user();
 			if (!u) return;

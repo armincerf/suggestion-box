@@ -1,4 +1,4 @@
-import { createSignal, Show, Index, type Accessor } from "solid-js";
+import { createSignal, Show, Index, For, type Accessor } from "solid-js";
 import type { Suggestion, User } from "../../../shared/zero/schema";
 import { SuggestionItem } from "../SuggestionCard/SuggestionItem";
 import { useUser } from "../../hooks/data/useUser";
@@ -10,6 +10,7 @@ import { useCategories } from "../../hooks/data/useCategories";
 import { cn } from "../../utils/cn";
 import { darkenHexString } from "../../utils/colorUtils";
 import Trash2Icon from "lucide-solid/icons/trash-2";
+import { useEditSuggestion } from "../../hooks/mutations/suggestionMutations";
 
 interface SuggestionReviewerProps {
 	currentSuggestion: Accessor<Suggestion | undefined>;
@@ -22,12 +23,26 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 	const { userId, displayName } = useUser();
 	const z = useZero();
 	const [categories] = useCategories();
+	const [isEditing, setIsEditing] = createSignal(false);
+	const [editedText, setEditedText] = createSignal("");
+	const [selectedCategoryId, setSelectedCategoryId] = createSignal<
+		string | null
+	>(props.currentSuggestion()?.categoryId ?? null);
+	const [error, setError] = createSignal<string | null>(null);
+	const editSuggestion = useEditSuggestion();
+
+	// Initialize edited text and category when suggestion changes
+	const initializeEditState = () => {
+		const suggestion = props.currentSuggestion();
+		if (suggestion) {
+			setEditedText(suggestion.body);
+			setSelectedCategoryId(suggestion.categoryId ?? null);
+		}
+	};
 
 	// Get the current suggestion's category
 	const currentCategory = () => {
-		const suggestion = props.currentSuggestion();
-		if (!suggestion) return undefined;
-		return categories().find((cat) => cat.id === suggestion.categoryId);
+		return categories().find((cat) => cat.id === selectedCategoryId());
 	};
 
 	// Add action item to the current suggestion
@@ -55,6 +70,7 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 			id: actionItemId,
 		});
 	};
+
 	const [actionItems] = useQuery(() =>
 		z.query.actionItems.orderBy("createdAt", "desc").related("assignedTo"),
 	);
@@ -69,11 +85,66 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 		if (!suggestionId) return [];
 		return actionItems().filter((item) => item.suggestionId === suggestionId);
 	};
+
 	const currentSuggestion = () => props.currentSuggestion();
 	const [actionItemText, setActionItemText] = createSignal("");
 	const [actionItemAssignedTo, setActionItemAssignedTo] = createSignal<
 		string | undefined
 	>(undefined);
+
+	// Function to handle saving edited suggestion
+	const handleSaveSuggestion = async () => {
+		const suggestion = currentSuggestion();
+		if (!suggestion) return;
+
+		// Validate category is selected
+		if (selectedCategoryId() === null) {
+			setError("Please select a category before saving");
+			return;
+		}
+
+		setError(null);
+		try {
+			const result = await editSuggestion(
+				suggestion.id,
+				editedText(),
+				selectedCategoryId(),
+			);
+
+			if (result.success) {
+				setIsEditing(false);
+			} else {
+				setError("Failed to save suggestion");
+			}
+		} catch (err) {
+			setError("Error saving suggestion");
+			console.error(err);
+		}
+	};
+
+	const handleSaveChanges = async () => {
+		const suggestion = currentSuggestion();
+		if (!suggestion) return;
+
+		if (selectedCategoryId() === null) {
+			setError("Please select a category before saving");
+			return;
+		}
+
+		setError(null);
+
+		try {
+			await z.mutate.suggestions.update({
+				id: suggestion.id,
+				categoryId: selectedCategoryId(),
+				updatedAt: Date.now(),
+			});
+			setError(null);
+		} catch (err) {
+			setError("Error saving changes");
+			console.error(err);
+		}
+	};
 
 	return (
 		<div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
@@ -83,6 +154,47 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 					Review suggestions submitted since the last session
 				</p>
 			</div>
+
+			{/* Show error message if any */}
+			<Show when={error()}>
+				<div class="p-4 m-4 bg-red-100 border border-red-400 text-red-700 rounded">
+					{error()}
+				</div>
+			</Show>
+
+			{/* Category selector */}
+			<Show when={currentSuggestion()}>
+				<div class="p-4 border-b dark:border-gray-700">
+					<h2 class="text-lg font-semibold mb-2">Assign Category</h2>
+					<div class="flex flex-wrap gap-2">
+						<For each={categories()}>
+							{(category) => (
+								<button
+									type="button"
+									class={cn(
+										"px-3 py-1 rounded-md text-sm font-medium transition-colors",
+										selectedCategoryId() === category.id
+											? "border-2 shadow-sm outline-2 outline-indigo-600"
+											: "border opacity-75 hover:opacity-100",
+									)}
+									style={{
+										"background-color": category.backgroundColor,
+										"border-color": category.backgroundColor,
+										color: darkenHexString(category.backgroundColor, 200),
+									}}
+									onClick={() => {
+										setSelectedCategoryId(category.id);
+									}}
+									disabled={props.isSessionEnded}
+								>
+									{category.name}
+								</button>
+							)}
+						</For>
+					</div>
+				</div>
+			</Show>
+
 			<Show when={currentCategory()}>
 				{(category) => (
 					<div
@@ -111,12 +223,45 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 						}
 					>
 						{(suggestion) => (
-							<SuggestionItem
-								suggestion={suggestion()}
-								userId={userId}
-								displayName={displayName()}
-								readOnly={props.isSessionEnded}
-							/>
+							<Show
+								when={!isEditing()}
+								fallback={
+									<div class="space-y-4">
+										<textarea
+											class="w-full textarea shadow-sm"
+											rows={4}
+											value={editedText()}
+											onInput={(e) => setEditedText(e.target.value)}
+										/>
+										<div class="flex justify-end gap-2">
+											<button
+												type="button"
+												class="btn btn-outline"
+												onClick={() => {
+													setIsEditing(false);
+													initializeEditState();
+												}}
+											>
+												Cancel
+											</button>
+											<button
+												type="button"
+												class="btn btn-primary"
+												onClick={handleSaveSuggestion}
+											>
+												Save
+											</button>
+										</div>
+									</div>
+								}
+							>
+								<SuggestionItem
+									suggestion={suggestion()}
+									userId={userId}
+									displayName={displayName()}
+									readOnly={props.isSessionEnded}
+								/>
+							</Show>
 						)}
 					</Show>
 				</div>
@@ -233,27 +378,21 @@ export function SuggestionReviewer(props: SuggestionReviewerProps) {
 							});
 						}}
 						class="btn btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-						disabled={false}
+						disabled={props.isSessionEnded}
 					>
 						<Trash2Icon class="w-5 h-5" /> Delete
 					</button>
 
-					<button
-						type="button"
-						onClick={() => {
-							const suggestionId = props.currentSuggestion()?.id;
-							console.log("suggestionId", suggestionId);
-							if (!suggestionId) return;
-							console.log("updating suggestion");
-							z.mutate.suggestions.update({
-								id: suggestionId,
-								updatedAt: Date.now(),
-							});
-						}}
-						class="btn btn-primary"
-					>
-						Save
-					</button>
+					<div class="flex gap-2">
+						<button
+							type="button"
+							onClick={handleSaveChanges}
+							class="btn btn-primary"
+							disabled={props.isSessionEnded || selectedCategoryId() === null}
+						>
+							Save
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

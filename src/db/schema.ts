@@ -24,7 +24,6 @@ export const suggestions = pgTable("suggestion", {
 	userId: text("user_id").notNull(),
 	displayName: text("display_name"),
 	categoryId: text("category_id")
-		.notNull()
 		.references(() => categories.id, { onDelete: "cascade" }),
 	updatedAt: timestamp("updated_at", { withTimezone: true }),
 	deletedAt: timestamp("deleted_at", { withTimezone: true }),

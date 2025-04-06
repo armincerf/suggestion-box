@@ -7,30 +7,12 @@ import {
 	QUERY_TTL_SHORT,
 } from "../../utils/constants";
 import { createLogger } from "../../hyperdx-logger";
+import { useFilteredUsers } from "./useUser";
 
 const logger = createLogger("suggestion-box:useSession");
 
 export const sessionByIdQuery = (z: TZero, id: string) =>
 	z.query.sessions.where("id", "=", id).one();
-
-export const sessionUsersQuery = (
-	z: TZero,
-	session: Accessor<{ users: string[] | null } | null | undefined>,
-) => {
-	const currentSession = session();
-	if (!currentSession?.users || currentSession.users.length === 0) {
-		// Return a query that yields nothing if no users or session loaded
-		return z.query.users.where("id", "=", DUMMY_QUERY_ID);
-	}
-
-	const userIds = currentSession.users;
-
-	// Use the OR logic to fetch users whose ID is in the list
-	return z.query.users.where(({ cmp, or }) => {
-		const conditions = userIds.map((userId: string) => cmp("id", "=", userId));
-		return or(...conditions);
-	});
-};
 
 export const allSessionsQuery = (z: TZero) => z.query.sessions;
 
@@ -44,12 +26,16 @@ export function useSession(id: string) {
 }
 
 export function useSessionUsers(sessionId: string) {
-	const z = useZero();
 	const [session] = useSession(sessionId);
-
-	return useQuery(() => sessionUsersQuery(z, session), {
-		ttl: QUERY_TTL_SHORT,
+	
+	// Create a memo for the session user IDs
+	const sessionUserIds = createMemo(() => {
+		const currentSession = session();
+		return currentSession?.users || [];
 	});
+	
+	// Use the filtered users hook
+	return useFilteredUsers(sessionUserIds);
 }
 
 export function useSessions() {

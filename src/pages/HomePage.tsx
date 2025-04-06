@@ -56,21 +56,62 @@ function HomePage() {
 			setIsCreatingSession(false);
 		}
 	};
+	const [submitted, setSubmitted] = createSignal(false);
 
 	return (
-		<div class="min-h-[100dvh] flex flex-col">
-			<header class="p-4 bg-base-100 shadow-sm">
-				<div class="container mx-auto">
-					<h1 class="text-3xl font-bold mb-2">Suggestion Box</h1>
-					<p class="text-base-content/70">Share your ideas and feedback</p>
+		<div class="min-h-[100dvh] flex flex-col bg-gradient-to-b from-base-100 to-base-200">
+			<header class="p-4 bg-base-100 shadow-md">
+				<div class="container mx-auto flex justify-between items-center">
+					<div>
+						<h1 class="text-3xl font-bold">Suggestion Box</h1>
+					</div>
+					<div class="flex items-center gap-3">
+						<Show
+							when={activeSession()}
+							fallback={
+								<button
+									type="button"
+									onClick={createNewSession}
+									disabled={isCreatingSession()}
+									class={cn(
+										"btn btn-primary",
+										isCreatingSession() && "loading"
+									)}
+								>
+									{isCreatingSession()
+										? "Creating..."
+										: "Create Session"}
+								</button>
+							}
+						>
+							<A
+								href={`/sessions/${activeSession()?.id}`}
+								class="btn btn-primary"
+							>
+								Join Active Session
+							</A>
+						</Show>
+					</div>
 				</div>
 			</header>
 
 			<main class="flex-1 container mx-auto p-4 md:p-8">
-				<div class="flex flex-col gap-4">
-					<div class="card bg-base-100 shadow-xl">
-						<div class="card-body">
-							<h2 class="card-title mb-4">Submit Feedback</h2>
+				<div class="max-w-3xl mx-auto">
+					<div class="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden">
+						<div class="card-body p-6 md:p-8">
+							<h2 class="text-2xl font-bold mb-6">Submit Your Feedback</h2>
+							<div class={cn(
+								"bg-primary/5 p-6 rounded-lg border border-primary/20 mb-6",
+								submitted() && "bg-success/5 border-success/20"
+							)}>
+								<p class="text-base-content/80">
+									{submitted() ? (
+										"Your feedback has been submitted. Thank you!"
+									) : (
+										"Your insights help us improve. Share your thoughts, ideas, or suggestions below."
+									)}
+								</p>
+							</div>
 							<ErrorBoundary
 								fallback={(error, reset) => (
 									<ErrorFallback
@@ -83,49 +124,11 @@ function HomePage() {
 								<Show when={z}>
 									<SuggestionFormWithCategoryPicker
 										displayName={displayName()}
+										categoryOptional={true}
+										onSubmit={() => setSubmitted(true)}
 									/>
 								</Show>
 							</ErrorBoundary>
-						</div>
-					</div>
-
-					<div class="card bg-base-100 shadow-xl">
-						<div class="card-body">
-							<h2 class="card-title mb-4">Retrospective Sessions</h2>
-							<p class="mb-6">
-								Create a new retrospective session to gather feedback from your
-								team.
-							</p>
-							<div class="card-actions flex flex-col gap-4">
-								<Show
-									when={activeSession()}
-									fallback={
-										<button
-											type="button"
-											onClick={createNewSession}
-											disabled={isCreatingSession()}
-											class={cn(
-												"btn btn-primary w-full",
-												isCreatingSession() && "loading",
-											)}
-										>
-											{isCreatingSession()
-												? "Creating..."
-												: "Create New Session"}
-										</button>
-									}
-								>
-									<A
-										href={`/sessions/${activeSession()?.id}`}
-										class="btn btn-primary w-full"
-									>
-										Join Active Session
-									</A>
-								</Show>
-								<A href="/feedback" class="btn btn-outline w-full">
-									View Feedback Board
-								</A>
-							</div>
 						</div>
 					</div>
 				</div>

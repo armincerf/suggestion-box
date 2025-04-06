@@ -1,5 +1,5 @@
 import { useQuery } from "@rocicorp/zero/solid";
-import { createMemo } from "solid-js";
+import { createMemo, type Accessor } from "solid-js";
 import { type TZero, useZero } from "../../zero/ZeroContext";
 import { getUserIdentifier } from "../../utils/userIdentifier";
 import { getNameFromUserId } from "../../nameGenerator";
@@ -16,17 +16,29 @@ function getUserColour(userId: string | null | undefined): string {
 	return `hsl(${hue}, 70%, 50%)`;
 }
 
-export const userByIdQuery = (z: TZero, userId: string | null) =>
-	z.query.users.where("id", "=", userId ?? "").one();
+const usersQuery = (z: TZero) => z.query.users;
 
-export const usersQuery = (z: TZero) => z.query.users;
+/**
+ * Hook to get all users
+ */
+export function useUsers() {
+	const z = useZero();
+	return useQuery(() => usersQuery(z), { ttl: QUERY_TTL_FOREVER });
+}
 
+/**
+ * Hook to get a specific user by ID
+ */
 export function useUser(id?: string) {
 	const z = useZero();
 	const userId = createMemo(() => id || z.userID || getUserIdentifier());
+	const [allUsers] = useUsers();
 
-	const [user] = useQuery(() => userByIdQuery(z, userId()), {
-		ttl: QUERY_TTL_FOREVER,
+	// Filter the specific user in createMemo
+	const user = createMemo(() => {
+		const users = allUsers();
+		const currentId = userId();
+		return users?.find(u => u.id === currentId) || null;
 	});
 
 	const displayName = createMemo(
@@ -40,11 +52,27 @@ export function useUser(id?: string) {
 		userId: userId(),
 		displayName,
 		color,
-		isLoading: user === undefined,
+		isLoading: allUsers() === undefined,
 	};
 }
 
-export function useUsers() {
-	const z = useZero();
-	return useQuery(() => usersQuery(z), { ttl: QUERY_TTL_FOREVER });
+/**
+ * Hook to get users filtered by an array of IDs
+ */
+export function useFilteredUsers(userIds: Accessor<string[]>) {
+	const [allUsers] = useUsers();
+	
+	// Filter users by the provided IDs
+	const filteredUsers = createMemo(() => {
+		const users = allUsers();
+		const ids = userIds();
+		
+		if (!users || !ids || ids.length === 0) {
+			return [];
+		}
+		
+		return users.filter(user => ids.includes(user.id));
+	});
+	
+	return [filteredUsers] as const;
 }

@@ -90,15 +90,11 @@ function MainApp() {
 				schema,
 				kvStore: "idb", // Use IndexedDB for persistence
 			});
-
-			// Start preloading data
-			console.log("Starting data preload...");
-			z.query.users.preload();
-			z.query.sessions.preload();
-			z.query.suggestions.preload();
-			z.query.comments.preload();
-			z.query.reactions.preload();
-			z.query.categories.preload();
+			
+			if (import.meta.env.DEV) {
+				// @ts-ignore
+				globalThis.zeroInspector = await z.inspect();
+			}
 
 			// Check/Create user record
 			console.log("Checking/Creating user record...");

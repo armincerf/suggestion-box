@@ -1,12 +1,10 @@
 import { createMemo, createSignal, Index, type JSX, Show } from "solid-js";
 import { useZero } from "../zero/ZeroContext";
-import { useQuery } from "@rocicorp/zero/solid";
 import { AvatarEditorModal } from "./AvatarEditor";
 import { HoverCard } from "@ark-ui/solid/hover-card";
 import { createListCollection, Select } from "@ark-ui/solid";
 import { Portal } from "solid-js/web";
-import { useUser } from "../hooks/data/useUser";
-import { QUERY_TTL_FOREVER } from "../utils/constants";
+import { useUser, useFilteredUsers } from "../hooks/data/useUser";
 import { createLogger } from "../hyperdx-logger";
 
 const logger = createLogger("suggestion-box:UserAvatar");
@@ -193,25 +191,32 @@ export function SelectUser(props: {
 	setSelectedUserId: (userId: string | undefined) => void;
 	disabled?: boolean;
 }) {
-	const z = useZero();
-	const userIds = () => props.userIds;
+	const userIds = createMemo(() => props.userIds);
 	const selectedUserId = () => props.selectedUserId;
-	const [users] = useQuery(
-		() =>
-			z.query.users.where("id", "IN", userIds()).orderBy("displayName", "asc"),
-		{
-			ttl: QUERY_TTL_FOREVER,
-		},
-	);
+	
+	// Use the filtered users hook
+	const [users] = useFilteredUsers(userIds);
+	
+	// Sort users by displayName
+	const sortedUsers = createMemo(() => {
+		const filteredUsers = users();
+		if (!filteredUsers.length) return [];
+		
+		return [...filteredUsers].sort((a, b) => 
+			(a.displayName || '').localeCompare(b.displayName || '')
+		);
+	});
+	
 	const usersOptions = createMemo(() =>
 		createListCollection({
-			items: users().map((user) => ({
+			items: sortedUsers().map((user) => ({
 				id: user.id,
 				displayName: user.displayName,
 				avatar: user.avatarUrl,
 			})),
 		}),
 	);
+	
 	const selectedUserName = createMemo(() => {
 		const user = users().find((user) => user.id === selectedUserId());
 		return user?.displayName ?? "";

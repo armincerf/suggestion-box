@@ -1,4 +1,3 @@
-import { createFocusTrap, type FocusTrap } from "focus-trap";
 import {
 	createSignal,
 	Show,
@@ -8,7 +7,6 @@ import {
 	createMemo,
 	ErrorBoundary,
 	onCleanup,
-	onMount,
 } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useSearch, type SearchResultHit } from "../../typesense/useSearch";
@@ -107,15 +105,6 @@ export function SearchPalette(props: SearchPaletteProps) {
 	);
 	let inputRef: HTMLInputElement | undefined;
 	let resultsRef: HTMLDivElement | undefined;
-	let focusTrapInstance: FocusTrap | undefined;
-	onMount(() => {
-		if (resultsRef) {
-			focusTrapInstance = createFocusTrap(resultsRef, {
-				allowOutsideClick: true,
-				escapeDeactivates: false,
-			});
-		}
-	});
 
 	createEffect(
 		on(
@@ -204,10 +193,6 @@ export function SearchPalette(props: SearchPaletteProps) {
 					})
 				: -1;
 
-			console.log("search results", currentResults);
-			console.log("active", active);
-			console.log("currentIndex", currentIndex);
-
 			let newIndex: number;
 			if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
 				newIndex =
@@ -221,12 +206,10 @@ export function SearchPalette(props: SearchPaletteProps) {
 		}
 	};
 
-	// --- Global Listeners ---
 	createEffect(() => {
 		if (props.isOpen) {
 			requestAnimationFrame(() => {
 				inputRef?.focus();
-				focusTrapInstance?.activate();
 			});
 			document.addEventListener("keydown", handleKeyDown, true);
 			onCleanup(() => {

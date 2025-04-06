@@ -5,10 +5,9 @@ import {
 	Match,
 	Show,
 	createMemo,
-	onCleanup,
 	For,
 } from "solid-js";
-import { useParams, useNavigate, useSearchParams } from "@solidjs/router";
+import { useParams, useNavigate } from "@solidjs/router";
 import { useZero } from "../zero/ZeroContext";
 import { useUser } from "../hooks/data/useUser";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -33,7 +32,6 @@ import { PollResultsToast } from "../components/Polls/PollResultsToast";
 import { useAcknowledgePollResults } from "../hooks/mutations/pollMutations";
 
 const logger = createLogger("suggestion-box:SessionPage");
-const HIGHLIGHT_DURATION = 5500; // ms for highlight effect
 
 export function SessionPage() {
 	const params = useParams<{ sessionId: string }>();
@@ -41,8 +39,7 @@ export function SessionPage() {
 	const z = useZero();
 	const { userId } = useUser();
 
-	// Use our new hook to handle session membership
-	const { status, sessionData, isLoading, isError } =
+	const { sessionData, isLoading, isError } =
 		useEnsureSessionMembership(params.sessionId);
 	const [users] = useSessionUsers(params.sessionId);
 	const [error, setError] = createSignal<string | null>(null);
@@ -147,7 +144,6 @@ export function SessionPage() {
 		try {
 			await acknowledgePollResults(pollId, userId, params.sessionId);
 
-			// Optimistically update UI by removing the poll from display
 			setPollsToShowResultsFor((prev) => prev.filter((p) => p.id !== pollId));
 		} catch (error) {
 			console.error("Failed to acknowledge poll results", error);
